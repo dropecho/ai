@@ -1,5 +1,9 @@
--D no-root
--D no-compilation
--D no-root
+# C#
 
--cs dist/cs/com.dropecho.ai
+# DEFINES
+-D dll_import
+-D no-root
+-D dll
+
+# OUTPUT
+-cs dist/cs/dropecho.lib_example

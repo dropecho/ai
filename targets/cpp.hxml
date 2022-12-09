@@ -1,8 +1,0 @@
---times
-
--cp src
--cpp dist/cpp
--D mingw
-
---macro include('com.dropecho')
---macro exclude('com.dropcho.tests')

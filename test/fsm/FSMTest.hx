@@ -44,7 +44,7 @@ class FSMTest {
 	private var bb:Blackboard;
 	private var st1:TestState1;
 	private var st2:TestState2;
-	private var fsm:FSM<Blackboard>;
+	private var fsm:FSM;
 
 	@Before
 	public function setup() {

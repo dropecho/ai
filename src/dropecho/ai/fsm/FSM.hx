@@ -1,4 +1,4 @@
-package dropecho.ai;
+package dropecho.ai.fsm;
 
 import dropecho.interop.AbstractFunc.Func_0;
 import dropecho.interop.AbstractMap;

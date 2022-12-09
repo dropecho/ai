@@ -1,14 +1,19 @@
--lib dropecho.ds
--lib dropecho.interop
+# CODE PATH
+-D analyzer-optimize
 
 -cp src
+--macro include('', true, null, ['src'])
 
---macro include('',true, null, ['src'])
+# PUT LIBS HERE.
+-lib dropecho.interop
 
+# Include above in each target.
 --each
 
---next
 targets/js.hxml
-
+--next
+targets/js-esm.hxml
 --next
 targets/cs.hxml
+--next
+targets/docs.hxml

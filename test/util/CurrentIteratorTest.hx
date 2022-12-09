@@ -4,10 +4,10 @@ import massive.munit.Assert;
 import dropecho.util.CurrentIterator;
 
 class CurrentIteratorTest {
-	private var array : Array<Int>;
-	private var iter : CurrentIterator<Int>;
+	private var array:Array<Int>;
+	private var iter:CurrentIterator<Int>;
 
-	@Before public function setup(){
+	@Before public function setup() {
 		array = new Array<Int>();
 
 		array.push(0);
@@ -31,16 +31,15 @@ class CurrentIteratorTest {
 		Assert.areEqual(1, iter.current());
 	}
 
-	@Test public function has_next_should_return_true_when_iterator_is_not_at_end_of_array(){
+	@Test public function has_next_should_return_true_when_iterator_is_not_at_end_of_array() {
 		Assert.isTrue(iter.hasNext());
 	}
 
-	@Test public function has_next_should_return_false_when_iterator_is_at_end_of_array(){
+	@Test public function has_next_should_return_false_when_iterator_is_at_end_of_array() {
 		iter.next();
 		iter.next();
 		iter.next();
 		iter.next();
 		Assert.isFalse(iter.hasNext());
 	}
-
 }

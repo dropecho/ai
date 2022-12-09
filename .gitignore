@@ -1,7 +1,6 @@
-*.swp
-.temp
-*.dll
-**/*.dll
 node_modules
-
+.nyc_output
+build
+report
+dist
 artifacts

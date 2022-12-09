@@ -4,19 +4,19 @@ import dropecho.ai.bt.node.Node;
 
 @:expose("bt.BehaviorTree")
 class BehaviorTree implements Node {
-	private var child : Node;
-	private var context : Blackboard;
+	private var child:Node;
+	private var context:Blackboard;
 
-	public function new(root : Node = null){
-		if(root == null){
+	public function new(root:Node = null) {
+		if (root == null) {
 			throw "Root cannot be null";
 		}
 
 		this.child = root;
 	}
 
-	public function init(context : Blackboard) {
-		if(context == null) {
+	public function init(context:Blackboard) {
+		if (context == null) {
 			context = new Blackboard();
 		}
 

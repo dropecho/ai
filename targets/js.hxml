@@ -1,3 +1,8 @@
+## JS
+
+# DEFINES
 -D js-es=6
-# -D analyzer-optimize
--js dist/js/dropecho.ai.js 
+-D source-map-content
+
+# OUTPUT 
+-js dist/js/cjs/index.cjs 

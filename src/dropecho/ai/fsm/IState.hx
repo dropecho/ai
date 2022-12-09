@@ -1,4 +1,4 @@
-package dropecho.ai;
+package dropecho.ai.fsm;
 
 @:expose("fsm.State")
 @:nativeChildren

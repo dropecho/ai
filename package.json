@@ -1,19 +1,40 @@
 {
-  "name": "@dropecho/lib_example",
-  "version": "0.1.8",
-  "description": "An example haxelib that outputs to multiple targets.",
+  "name": "@dropecho/ai",
+  "version": "0.1.0",
+  "description": "A set of AI utils for gamedev.",
   "author": "vantreeseba <vantreeseba@gmail.com>",
-  "repository": "github:dropecho/lib_example",
-  "main": "dist/js/index.js",
+  "repository": "github:dropecho/ai",
+ "type": "module",
   "files": [
-    "dist/js/index.js"
+    "dist/js/**/*"
   ],
+  "main": "./dist/js/cjs/index.cjs",
+  "types": "./dist/js/esm/index.d.ts",
   "publishConfig": {
     "access": "public"
   },
   "license": "MIT",
   "scripts": {
+    "build": "npm run clean && haxe build.hxml",
     "test": "haxelib run munit t",
-    "build": "haxe build.hxml"
+    "clean": "rm -rf dist && rm -rf artifacts"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.2",
+    "@semantic-release/commit-analyzer": "^9.0.2",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^8.0.7",
+    "@semantic-release/npm": "^9.0.1",
+    "@semantic-release/release-notes-generator": "^10.0.3",
+    "semantic-release": "^19.0.5",
+    "semantic-release-haxelib": "^1.1.0"
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/js/cjs/index.cjs",
+      "import": "./dist/js/esm/index.js"
+    }
   }
+
 }
