@@ -52,6 +52,10 @@ class FSM {
 	public function addTransition(from:IState, to:IState, condition:Condition) {
 		var t = new Transition(to, condition);
 
+		if (!_transitions.exists(_currentState.getName())) {
+			return;
+		}
+
 		var transitions = _transitions.get(from.getName());
 		if (transitions == null) {
 			transitions = new Array<Transition>();
@@ -70,6 +74,10 @@ class FSM {
 			if (t.condition.call()) {
 				return t;
 			}
+		}
+
+		if (!_transitions.exists(_currentState.getName())) {
+			return null;
 		}
 
 		var _currentTransitions = _transitions.get(_currentState.getName());

@@ -11,20 +11,22 @@
 # -main TestMain
 # -neko artifacts/neko_test/tests.n
 
+## C#
 # --next
-# -cp src
-# -cp test
-#
-# -lib dropecho.ds
-# -lib dropecho.interop
-#
-# -lib munit
-# -lib hamcrest
-#
-# -main TestMain
-# -cs artifacts/cs_test
+-cp src
+-cp test
 
-# --next
+-lib dropecho.ds
+-lib dropecho.interop
+
+-lib munit
+-lib hamcrest
+
+-main TestMain
+-cs artifacts/cs_test
+
+## Javascript NodeJS
+--next
 -cp src
 -cp test
 
@@ -36,4 +38,4 @@
 -lib hxnodejs
 
 -main TestMain
--js artifacts/js_test/test.js
+-js artifacts/js_test/test.cjs
