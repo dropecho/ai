@@ -1,6 +1,6 @@
 {
   "name": "@dropecho/ai",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A set of AI utils for gamedev.",
   "author": "vantreeseba <vantreeseba@gmail.com>",
   "repository": "github:dropecho/ai",
