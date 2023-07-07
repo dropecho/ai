@@ -1,0 +1,9 @@
+{
+  "root_package": "dropecho",
+  "instrument": {
+    "coverage": true,
+    "profiler": false,
+    "coverage_reporter": "coverage-console-file-summary-reporter"
+  },
+  "hxml": "test.hxml"
+}

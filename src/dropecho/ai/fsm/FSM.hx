@@ -1,9 +1,10 @@
 package dropecho.ai.fsm;
 
-import dropecho.interop.AbstractFunc.Func_0;
+import dropecho.ai.Blackboard;
+import dropecho.interop.AbstractFunc.Func_1;
 import dropecho.interop.AbstractMap;
 
-typedef Condition = Func_0<Bool>;
+typedef Condition = Func_1<Blackboard, Bool>;
 
 @:nativeGen
 class Transition {
@@ -19,6 +20,7 @@ class Transition {
 @:expose("fsm.FSM")
 @:nativeGen
 class FSM {
+	var _blackboard:Blackboard;
 	var _currentState:IState;
 	var _transitions = new AbstractMap<String, Array<Transition>>();
 	var _anyTransitions = new Array<Transition>();
@@ -71,19 +73,19 @@ class FSM {
 
 	private function getTransition():Transition {
 		for (t in _anyTransitions) {
-			if (t.condition.call()) {
+			if (t.condition(_blackboard)) {
 				return t;
 			}
 		}
 
-		if (!_transitions.exists(_currentState.getName())) {
+		if (_currentState == null || !_transitions.exists(_currentState.getName())) {
 			return null;
 		}
 
 		var _currentTransitions = _transitions.get(_currentState.getName());
 		if (_currentTransitions != null) {
 			for (t in _currentTransitions) {
-				if (t.condition.call()) {
+				if (t.condition(_blackboard)) {
 					return t;
 				}
 			}

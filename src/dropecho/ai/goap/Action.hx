@@ -12,15 +12,8 @@ class Action {
 	public var PreMatcher:Func_0<Bool>;
 	public var PostMatcher:Func_0<Bool>;
 
-	public function new(
-    actionType:String, 
-    updateFunc:Float->Void, 
-    cost:Int = 0, 
-    ?preconditions:Array<String>, 
-    ?postconditions:Array<String>,
-		?preMatcher:Func_0<Bool>, 
-    ?postMatcher:Func_0<Bool>) 
-  {
+	public function new(actionType:String, updateFunc:Float->Void, cost:Int = 0, ?preconditions:Array<String>, ?postconditions:Array<String>,
+			?preMatcher:Func_0<Bool>, ?postMatcher:Func_0<Bool>) {
 		ActionType = actionType;
 		UpdateFunc = updateFunc;
 		Cost = cost;
@@ -31,14 +24,14 @@ class Action {
 	}
 
 	public function preconditions_satisfied():Bool {
-		return PreMatcher.call();
+		return PreMatcher();
 	}
 
 	public function postconditions_satisfied():Bool {
-		return PostMatcher.call();
+		return PostMatcher();
 	}
 
 	public function update(delta_time:Float):Void {
-		UpdateFunc.call(delta_time);
+		UpdateFunc(delta_time);
 	}
 }

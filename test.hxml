@@ -1,41 +1,20 @@
+-cp src
+-cp test
+
+-lib utest 
+-lib dropecho.testing
+-lib dropecho.ds
+-lib dropecho.interop
+# --each
+
 # --next
-# -cp src
-# -cp test
-#
-# -lib dropecho.ds
-# -lib dropecho.interop
-#
-# -lib munit
-# -lib hamcrest
-#
-# -main TestMain
-# -neko artifacts/neko_test/tests.n
+-neko artifacts/neko_test/tests.n
 
 ## C#
 # --next
--cp src
--cp test
-
--lib dropecho.ds
--lib dropecho.interop
-
--lib munit
--lib hamcrest
-
--main TestMain
--cs artifacts/cs_test
-
-## Javascript NodeJS
---next
--cp src
--cp test
-
--lib dropecho.ds
--lib dropecho.interop
-
--lib munit
--lib hamcrest
--lib hxnodejs
-
--main TestMain
--js artifacts/js_test/test.cjs
+# -cs artifacts/cs_test
+#
+# ## Javascript NodeJS
+# --next
+# -lib hxnodejs
+# -js artifacts/js_test/test.cjs

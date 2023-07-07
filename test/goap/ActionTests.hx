@@ -1,13 +1,13 @@
 package goap;
 
-import massive.munit.Assert;
+import utest.Test;
+import utest.Assert;
 import dropecho.ai.goap.Action;
 
-class ActionTest {
+class ActionTests extends Test {
 	var _action:Action;
 	var _counter:Int = 0;
 
-	@Before
 	public function setup() {
 		_counter = 0;
 
@@ -22,21 +22,18 @@ class ActionTest {
 		}
 	}
 
-	@Test
-	public function test_update_should_call_given_func() {
+	public function test_test_update_should_call_given_func() {
 		_action.update(0);
-		Assert.areEqual(1, _counter);
+		Assert.equals(1, _counter);
 	}
 
-	@Test
-	public function test_pre_conditions_satisfied_should_call_given_func() {
+	public function test_test_pre_conditions_satisfied_should_call_given_func() {
 		_action.preconditions_satisfied();
-		Assert.areEqual(-1, _counter);
+		Assert.equals(-1, _counter);
 	}
 
-	@Test
-	public function test_post_conditions_satisfied_should_call_given_func() {
+	public function test_test_post_conditions_satisfied_should_call_given_func() {
 		_action.postconditions_satisfied();
-		Assert.areEqual(-2, _counter);
+		Assert.equals(-2, _counter);
 	}
 }

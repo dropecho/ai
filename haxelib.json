@@ -2,17 +2,10 @@
   "name": "dropecho.ai",
   "url": "https://github.com/dropecho/ai/",
   "license": "MIT",
-  "tags": [
-    "ai",
-    "game"
-  ],
+  "tags": ["ai", "game"],
   "description": "This library provides AI utilities for games.",
   "version": "0.1.0",
   "releasenote": "Initial release",
-  "contributors": [
-    "vantreeseba"
-  ],
-  "dependencies": {
-    "dropecho.interop": ""
-  }
+  "contributors": ["vantreeseba"],
+  "dependencies": {}
 }

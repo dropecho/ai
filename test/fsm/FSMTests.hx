@@ -1,8 +1,9 @@
 package fsm;
 
+import utest.Test;
 import dropecho.ai.fsm.*;
 import dropecho.ai.Blackboard;
-import massive.munit.Assert;
+import utest.Assert;
 
 class BlackboardState {
 	private var bb:Blackboard;
@@ -13,7 +14,7 @@ class BlackboardState {
 }
 
 class TestState1 extends BlackboardState implements IState {
-	public function getName():String {
+	public function getName() {
 		return "TestState1";
 	}
 
@@ -27,7 +28,7 @@ class TestState1 extends BlackboardState implements IState {
 }
 
 class TestState2 extends BlackboardState implements IState {
-	public function getName():String {
+	public function getName() {
 		return "TestState2";
 	}
 
@@ -40,13 +41,12 @@ class TestState2 extends BlackboardState implements IState {
 	}
 }
 
-class FSMTest {
+class FSMTests extends Test {
 	private var bb:Blackboard;
 	private var st1:TestState1;
 	private var st2:TestState2;
 	private var fsm:FSM;
 
-	@Before
 	public function setup() {
 		bb = new Blackboard();
 		bb.set('some_fact', 0);
@@ -55,29 +55,27 @@ class FSMTest {
 
 		this.fsm = new FSM();
 
+		this.fsm.changeToState(st1);
 		//     fsm.addTransition(st1, st2, () -> bb.get('some_fact') > 2);
-		//     this.fsm.changeToState(st1);
 	}
 
-	@Test
-	public function starting_state_runs() {
+	public function test_starting_state_runs() {
+		fsm.tick();
+		Assert.equals(1, bb.get("some_fact"));
 		//     fsm.tick();
-		//     Assert.areEqual(1, bb.get("some_fact"));
-		//     fsm.tick();
-		//     Assert.areEqual(2, bb.get("some_fact"));
+		//     Assert.equals(2, bb.get("some_fact"));
 	}
 
-	@Test
-	public function transitions_work() {
+	public function test_transitions_work() {
+		fsm.tick();
+		Assert.equals(1, bb.get("some_fact"));
 		//     fsm.tick();
-		//     Assert.areEqual(1, bb.get("some_fact"));
+		//     Assert.equals(2, bb.get("some_fact"));
 		//     fsm.tick();
-		//     Assert.areEqual(2, bb.get("some_fact"));
+		//     Assert.equals(3, bb.get("some_fact"));
 		//     fsm.tick();
-		//     Assert.areEqual(3, bb.get("some_fact"));
+		//     Assert.equals(2, bb.get("some_fact"));
 		//     fsm.tick();
-		//     Assert.areEqual(2, bb.get("some_fact"));
-		//     fsm.tick();
-		//     Assert.areEqual(1, bb.get("some_fact"));
+		//     Assert.equals(1, bb.get("some_fact"));
 	}
 }
