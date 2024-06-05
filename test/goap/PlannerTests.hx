@@ -25,7 +25,7 @@ class PlannerTests extends Test {
 	public function test_when_given_no_matching_actions_plan_should_be_null() {
 		_planner = new Planner(_goal, [_action1]);
 		_plan = _planner.generatePlan();
-		Assert.isTrue(_plan == null);
+		Assert.equals(_plan, null);
 	}
 
 	public function test_when_given_a_matching_action_plan_should_be_generated() {
@@ -33,7 +33,7 @@ class PlannerTests extends Test {
 		_planner = new Planner(_goal, [_action1]);
 		_plan = _planner.generatePlan();
 
-		Assert.isTrue(_plan != null);
+		Assert.notNull(_plan);
 	}
 
 	public function test_when_given_two_matching_actions_plan_should_contain_lowest_cost_action() {
@@ -42,6 +42,6 @@ class PlannerTests extends Test {
 		_planner = new Planner(_goal, [_action1, _action2]);
 		_plan = _planner.generatePlan();
 
-		Assert.equals(_plan.Actions[0], _action2);
+		Assert.equals(_plan._actions.peek(), _action2);
 	}
 }

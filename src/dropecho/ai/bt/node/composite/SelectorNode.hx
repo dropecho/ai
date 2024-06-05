@@ -11,7 +11,9 @@ class SelectorNode extends CompositeNode {
 	}
 
 	public override function execute():NODE_STATUS {
-		var status = this.childIterator.current().execute();
+		var status = this.childIterator
+			.current()
+			.execute();
 
 		if (status == NODE_STATUS.SUCCESS) {
 			this.childIterator.reset();

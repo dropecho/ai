@@ -10,11 +10,11 @@ typedef TaskMap = AbstractMap<String, Task>;
 class TaskBank {
 	private static var tasks:TaskMap = new TaskMap();
 
-	public static function register(name:String, task:Task) {
+	inline public static function register(name:String, task:Task) {
 		tasks.set(name, task);
 	}
 
-	public static function get(name:String):Task {
+	inline public static function get(name:String):Task {
 		return tasks.get(name);
 	}
 }

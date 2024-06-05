@@ -11,15 +11,20 @@ class ActionTests extends Test {
 	public function setup() {
 		_counter = 0;
 
-		_action = new Action("test_action", (deltaTime) -> _counter = 1);
-		_action.PreMatcher = function() {
+		function preMatcher() {
 			_counter = -1;
 			return false;
 		}
-		_action.PostMatcher = function() {
+		function postMatcher() {
 			_counter = -2;
 			return false;
 		}
+
+		function updateFunc(deltaTime) {
+			_counter = 1;
+		}
+
+		_action = new Action("test_action", updateFunc, 0, [], [], preMatcher, postMatcher);
 	}
 
 	public function test_test_update_should_call_given_func() {

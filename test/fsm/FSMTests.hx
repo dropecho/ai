@@ -6,76 +6,90 @@ import dropecho.ai.Blackboard;
 import utest.Assert;
 
 class BlackboardState {
-	private var bb:Blackboard;
+	var _bb:Blackboard;
+	var _name:String;
 
 	public function new(bb:Blackboard) {
-		this.bb = bb;
+		_bb = bb;
 	}
-}
 
-class TestState1 extends BlackboardState implements IState {
 	public function getName() {
-		return "TestState1";
+		if (_name == null) {
+			_name = Type.getClassName(Type.getClass(this));
+		}
+		return _name;
 	}
 
 	public function onEnter() {}
 
 	public function onExit() {}
+}
 
+class WanderState extends BlackboardState implements IState {
 	public function tick() {
-		bb.increment('some_fact');
+		_bb.increment('hunger');
 	}
 }
 
-class TestState2 extends BlackboardState implements IState {
-	public function getName() {
-		return "TestState2";
-	}
-
-	public function onEnter() {}
-
-	public function onExit() {}
-
+class EatingState extends BlackboardState implements IState {
 	public function tick() {
-		bb.decrement('some_fact');
+		_bb.decrement('hunger');
 	}
 }
 
 class FSMTests extends Test {
-	private var bb:Blackboard;
-	private var st1:TestState1;
-	private var st2:TestState2;
-	private var fsm:FSM;
+	private var _bb:Blackboard;
+	private var _st1:WanderState;
+	private var _st2:EatingState;
+	private var _fsm:FSM;
 
 	public function setup() {
-		bb = new Blackboard();
-		bb.set('some_fact', 0);
-		st1 = new TestState1(bb);
-		st2 = new TestState2(bb);
+		_bb = new Blackboard();
+		_bb.set('hunger', 0);
+		_st1 = new WanderState(_bb);
+		_st2 = new EatingState(_bb);
 
-		this.fsm = new FSM();
+		_fsm = new FSM();
 
-		this.fsm.changeToState(st1);
-		//     fsm.addTransition(st1, st2, () -> bb.get('some_fact') > 2);
+		_fsm.changeToState(_st1);
+		_fsm.addTransition(_st1, _st2, () -> _bb.get('hunger') > 2);
+		_fsm.addTransition(_st2, _st1, () -> _bb.get('hunger') <= 0);
 	}
 
 	public function test_starting_state_runs() {
-		fsm.tick();
-		Assert.equals(1, bb.get("some_fact"));
-		//     fsm.tick();
-		//     Assert.equals(2, bb.get("some_fact"));
+		_fsm.tick();
+		Assert.equals(1, _bb.get("hunger"));
+		_fsm.tick();
+		Assert.equals(2, _bb.get("hunger"));
 	}
 
 	public function test_transitions_work() {
-		fsm.tick();
-		Assert.equals(1, bb.get("some_fact"));
-		//     fsm.tick();
-		//     Assert.equals(2, bb.get("some_fact"));
-		//     fsm.tick();
-		//     Assert.equals(3, bb.get("some_fact"));
-		//     fsm.tick();
-		//     Assert.equals(2, bb.get("some_fact"));
-		//     fsm.tick();
-		//     Assert.equals(1, bb.get("some_fact"));
+		// start in wander state.
+		_fsm.tick();
+		Assert.equals(1, _bb.get("hunger"));
+		_fsm.tick();
+		Assert.equals(2, _bb.get("hunger"));
+		_fsm.tick();
+		Assert.equals(3, _bb.get("hunger"));
+
+		// run eat state.
+		_fsm.tick();
+		Assert.equals(2, _bb.get("hunger"));
+		_fsm.tick();
+		Assert.equals(1, _bb.get("hunger"));
+		_fsm.tick();
+		Assert.equals(0, _bb.get("hunger"));
+
+		// wander state
+		_fsm.tick();
+		Assert.equals(1, _bb.get("hunger"));
+		_fsm.tick();
+		Assert.equals(2, _bb.get("hunger"));
+		_fsm.tick();
+		Assert.equals(3, _bb.get("hunger"));
+
+		// switch to eat
+		_fsm.tick();
+		Assert.equals(2, _bb.get("hunger"));
 	}
 }

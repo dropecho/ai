@@ -1,15 +1,14 @@
 package dropecho.ai.fsm;
 
-import dropecho.ai.Blackboard;
-import dropecho.interop.AbstractFunc.Func_1;
+import dropecho.interop.AbstractFunc.Func_0;
 import dropecho.interop.AbstractMap;
 
-typedef Condition = Func_1<Blackboard, Bool>;
+typedef Condition = Func_0<Bool>;
 
 @:nativeGen
 class Transition {
-	public var to:IState;
-	public var condition:Condition;
+	public var to(default, null):IState;
+	public var condition(default, null):Condition;
 
 	public function new(to:IState, condition:Condition) {
 		this.to = to;
@@ -20,72 +19,78 @@ class Transition {
 @:expose("fsm.FSM")
 @:nativeGen
 class FSM {
-	var _blackboard:Blackboard;
 	var _currentState:IState;
+	/* Transitions from a given state to another */
 	var _transitions = new AbstractMap<String, Array<Transition>>();
+	/* Transitions from any state to another */
 	var _anyTransitions = new Array<Transition>();
 
 	public function new() {}
 
+	/**
+	 * Updates the current state, and gets any transitions that match.
+	 * Given it has a transition, it invokes next.onEnter and current.onExit
+	 */
 	public function tick() {
+		_currentState?.tick();
+
 		var transition = getTransition();
 		if (transition != null) {
 			changeToState(transition.to);
 		}
-
-		if (_currentState != null) {
-			_currentState.tick();
-		}
 	}
 
+	/**
+	 * @param state - The state to change to. 
+	 */
 	public function changeToState(state:IState) {
-		if (state == _currentState) {
-			return;
-		}
-
-		if (_currentState != null) {
-			_currentState.onExit();
-		}
-
+		_currentState?.onExit();
+		state.onEnter();
 		_currentState = state;
-		_currentState.onEnter();
 	}
 
-	public function addTransition(from:IState, to:IState, condition:Condition) {
-		var t = new Transition(to, condition);
+	/**
+	 * Add a transition to the FSM.
+	 * This condition, when true, changes the FSM from the fromState, to the toState.
+	 */
+	public function addTransition(fromState:IState, toState:IState, condition:Condition) {
+		var t = new Transition(toState, condition);
 
-		if (!_transitions.exists(_currentState.getName())) {
-			return;
-		}
+		var transitions:Array<Transition> = null;
 
-		var transitions = _transitions.get(from.getName());
-		if (transitions == null) {
+		if (_transitions.exists(fromState.getName())) {
+			transitions = _transitions.get(fromState.getName());
+		} else {
 			transitions = new Array<Transition>();
-			_transitions.set(from.getName(), transitions);
+			_transitions.set(fromState.getName(), transitions);
 		}
 
 		transitions.push(t);
 	}
 
+	/**
+	 * Add a transition to the FSM.
+	 * This condition, when true, changes the FSM from ANY state to the toState.
+	 */
 	public function addAnyTransition(to:IState, condition:Condition) {
 		_anyTransitions.push(new Transition(to, condition));
 	}
 
 	private function getTransition():Transition {
 		for (t in _anyTransitions) {
-			if (t.condition(_blackboard)) {
+			if (t.condition()) {
 				return t;
 			}
 		}
 
-		if (_currentState == null || !_transitions.exists(_currentState.getName())) {
+		if (!_transitions.exists(_currentState?.getName())) {
 			return null;
 		}
 
-		var _currentTransitions = _transitions.get(_currentState.getName());
+		var _currentTransitions = _transitions.get(_currentState?.getName());
 		if (_currentTransitions != null) {
 			for (t in _currentTransitions) {
-				if (t.condition(_blackboard)) {
+				if (t.condition()) {
 					return t;
 				}
 			}
