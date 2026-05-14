@@ -13,9 +13,9 @@ class BlackboardState {
 	}
 }
 
-class TestState1 extends BlackboardState implements IState {
+class WanderState extends BlackboardState implements IState {
 	public function getName() {
-		return "TestState1";
+		return "WanderState";
 	}
 
 	public function onEnter() {}
@@ -27,9 +27,9 @@ class TestState1 extends BlackboardState implements IState {
 	}
 }
 
-class TestState2 extends BlackboardState implements IState {
+class EatingState extends BlackboardState implements IState {
 	public function getName() {
-		return "TestState2";
+		return "EatingState";
 	}
 
 	public function onEnter() {}
@@ -43,15 +43,15 @@ class TestState2 extends BlackboardState implements IState {
 
 class FSMTests extends Test {
 	private var bb:Blackboard;
-	private var st1:TestState1;
-	private var st2:TestState2;
+	private var st1:WanderState;
+	private var st2:EatingState;
 	private var fsm:FSM;
 
 	public function setup() {
 		bb = new Blackboard();
 		bb.set('some_fact', 0);
-		st1 = new TestState1(bb);
-		st2 = new TestState2(bb);
+		st1 = new WanderState(bb);
+		st2 = new EatingState(bb);
 
 		this.fsm = new FSM();
 
@@ -77,5 +77,39 @@ class FSMTests extends Test {
 		//     Assert.equals(2, bb.get("some_fact"));
 		//     fsm.tick();
 		//     Assert.equals(1, bb.get("some_fact"));
+	}
+
+	public function test_any_transitions_work() {
+		var bb2 = new Blackboard();
+		bb2.set('hunger', 0);
+		bb2.set('some_fact', 0);
+
+		var fsm2 = new FSM();
+		var ws = new WanderState(bb2);
+		var es = new EatingState(bb2);
+
+		fsm2.changeToState(ws);
+		fsm2.addAnyTransition(es, () -> bb2.get('hunger') > 0);
+		fsm2.addAnyTransition(ws, () -> bb2.get('some_fact') > 5);
+
+		fsm2.tick();
+		Assert.equals(1, bb2.get("some_fact"));
+	}
+
+	public function test_toDot_contains_state_names() {
+		var bb2 = new Blackboard();
+		bb2.set('hunger', 0);
+		bb2.set('some_fact', 0);
+
+		var fsm2 = new FSM();
+		var ws = new WanderState(bb2);
+		var es = new EatingState(bb2);
+
+		fsm2.changeToState(ws);
+		fsm2.addAnyTransition(es, () -> bb2.get('hunger') > 0);
+		fsm2.addAnyTransition(ws, () -> bb2.get('some_fact') > 5);
+
+		var dot = fsm2.toDot();
+		Assert.isTrue(dot.indexOf("EatingState") >= 0);
 	}
 }
