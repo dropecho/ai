@@ -100,12 +100,13 @@ class FSM {
 		var activeTransition = getTransition();
 		var activeTransitionName = activeTransition == null ? "" : activeTransition.to.getName();
 
-		nodeOutput = "any\n";
-
-		for (any in _anyTransitions) {
-			edgeOutput += '\n any -> ${any.to.getName()}';
-			if (activeTransitionName == any.to.getName() && _anyTransitions.contains(activeTransition)) {
-				edgeOutput += '[class="active"]';
+		if (_anyTransitions.length > 0) {
+			nodeOutput = "any\n";
+			for (any in _anyTransitions) {
+				edgeOutput += '\n any -> ${any.to.getName()}';
+				if (activeTransitionName == any.to.getName() && _anyTransitions.contains(activeTransition)) {
+					edgeOutput += '[class="active"]';
+				}
 			}
 		}
 
@@ -122,7 +123,7 @@ class FSM {
 			}
 			edgeOutput = edgeOutput + '\n $key -> $key';
 
-			if (key == _currentState.getName()) {
+			if (_currentState != null && key == _currentState.getName()) {
 				if (activeTransition == null) {
 					nodeOutput += '[class="active"]';
 					edgeOutput += '[class="active"]';
