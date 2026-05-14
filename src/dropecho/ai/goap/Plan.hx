@@ -6,6 +6,9 @@ import dropecho.ds.Queue;
 class Plan {
 	public var _actions(default, null):Queue<Action> = new Queue<Action>();
 
+	public var length(get, null):Int;
+	inline function get_length():Int return Actions.length;
+
 	public function new(actions:AbstractArray<Action> = null) {
 		if (actions != null) {
 			_actions.enqueueMany(actions);
