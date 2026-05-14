@@ -10,7 +10,7 @@ class TestNode implements Node {
 	public var execReturn:NODE_STATUS;
 
 	public function new(?execReturn:NODE_STATUS) {
-		this.execReturn = execReturn != null ? execReturn : NODE_STATUS.SUCCESS;
+		this.execReturn = execReturn ?? NODE_STATUS.SUCCESS;
 	}
 
 	public function init(context:Blackboard) {
