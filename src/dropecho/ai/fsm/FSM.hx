@@ -28,6 +28,9 @@ class FSM {
 	public function new() {}
 
 	public function tick() {
+		if (_currentState == null) {
+			throw "FSM.tick() called before changeToState() — set an initial state first";
+		}
 		var transition = getTransition();
 		if (transition != null) {
 			changeToState(transition.to);
@@ -36,6 +39,10 @@ class FSM {
 		if (_currentState != null) {
 			_currentState.tick();
 		}
+	}
+
+	public function getCurrentState():IState {
+		return _currentState;
 	}
 
 	public function changeToState(state:IState) {
