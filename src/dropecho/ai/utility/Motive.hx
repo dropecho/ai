@@ -20,20 +20,17 @@ class UtilityAgent {
 	public function new() {}
 
 	public function getMostImportantMotive() {
-		// loop through array, and get important motive.
-		// this will typically be the lowest one.
-
-		var lowest = motives.fold(function(motive:Motive, result:Motive) {
-			if (result != null && result.value < motive.value) {
-				return result;
-			}
-			return motive;
-		}, null);
-
-		return lowest;
+		return motives.fold(foldToLowestMotive, null);
 	}
 
-	public function toString() {
+	inline private function foldToLowestMotive(motive:Motive, result:Motive):Motive {
+		if (result?.value < motive.value) {
+			return result;
+		}
+		return motive;
+	}
+
+	inline public function toString() {
 		return Json.stringify(motives, null, "  ");
 	}
 }

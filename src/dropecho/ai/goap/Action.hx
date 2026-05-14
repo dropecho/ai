@@ -4,25 +4,15 @@ import dropecho.interop.AbstractFunc.Action_1;
 import dropecho.interop.AbstractFunc.Func_0;
 
 class Action {
-	/** This is a test */
 	public var ActionType:String;
-
-	/** This is a test */
 	public var Cost:Int;
-
-	/** This is a test */
 	public var Preconditions:Array<String> = new Array<String>();
-
-	/** This is a test */
 	public var Postconditions:Array<String> = new Array<String>();
 
 	/** This is the function called every frame */
 	public var UpdateFunc:Action_1<Float>;
 
-	/** This is a test */
 	public var PreMatcher:Func_0<Bool> = () -> true;
-
-	/** This is a test */
 	public var PostMatcher:Func_0<Bool> = () -> true;
 
 	public function new(
@@ -43,12 +33,10 @@ class Action {
 		PostMatcher = postMatcher ?? PostMatcher;
 	}
 
-	/** This is a test */
 	inline public function preconditions_satisfied():Bool {
 		return PreMatcher();
 	}
 
-	/** This is a test */
 	inline public function postconditions_satisfied():Bool {
 		return PostMatcher();
 	}
