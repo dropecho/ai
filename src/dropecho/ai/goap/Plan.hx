@@ -6,6 +6,9 @@ class Plan {
 	public var Actions:AbstractArray<Action>;
 	public var CurrentAction:Int;
 
+	public var length(get, null):Int;
+	inline function get_length():Int return Actions.length;
+
 	public function new(actions:AbstractArray<Action> = null) {
 		Actions = actions != null ? actions : new AbstractArray<Action>();
 		CurrentAction = 0;
