@@ -6,6 +6,7 @@
 
 # PUT LIBS HERE.
 -lib dropecho.interop
+-lib dropecho.ds
 
 # Include above in each target.
 --each

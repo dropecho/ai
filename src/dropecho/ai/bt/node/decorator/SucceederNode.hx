@@ -10,7 +10,7 @@ class SucceederNode extends DecoratorNode {
 		var status = child.execute();
 
 		if (status == NODE_STATUS.RUNNING) {
-			return return NODE_STATUS.RUNNING;
+			return NODE_STATUS.RUNNING;
 		}
 
 		return NODE_STATUS.SUCCESS;

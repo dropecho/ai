@@ -5,33 +5,48 @@ import dropecho.interop.AbstractFunc.Func_0;
 
 class Action {
 	public var ActionType:String;
-	public var Cost:Int;
-	public var Preconditions:Array<String>;
-	public var Postconditions:Array<String>;
-	public var UpdateFunc:Action_1<Float>;
-	public var PreMatcher:Func_0<Bool>;
-	public var PostMatcher:Func_0<Bool>;
+	public var Cost:Float;
+	public var Preconditions:Array<String> = new Array<String>();
+	public var Postconditions:Array<String> = new Array<String>();
 
-	public function new(actionType:String, updateFunc:Float->Void, cost:Int = 0, ?preconditions:Array<String>, ?postconditions:Array<String>,
-			?preMatcher:Func_0<Bool>, ?postMatcher:Func_0<Bool>) {
+	/** This is the function called every frame */
+	public var UpdateFunc:Action_1<Float>;
+
+	public var PreMatcher:Func_0<Bool> = () -> true;
+	public var PostMatcher:Func_0<Bool> = () -> true;
+
+	public function new(
+		actionType:String,
+		updateFunc:Float->Void,
+		cost:Float = 0,
+		?preconditions:Array<String>,
+		?postconditions:Array<String>,
+		?preMatcher:Func_0<Bool>,
+		?postMatcher:Func_0<Bool>
+	) {
 		ActionType = actionType;
 		UpdateFunc = updateFunc;
 		Cost = cost;
-		Preconditions = preconditions != null ? preconditions : new Array<String>();
-		Postconditions = postconditions != null ? postconditions : new Array<String>();
-		PreMatcher = preMatcher != null ? preMatcher : () -> true;
-		PostMatcher = postMatcher != null ? postMatcher : () -> true;
+		Preconditions = preconditions ?? Preconditions;
+		Postconditions = postconditions ?? Postconditions;
+		PreMatcher = preMatcher ?? PreMatcher;
+		PostMatcher = postMatcher ?? PostMatcher;
 	}
 
-	public function preconditions_satisfied():Bool {
+	inline public function preconditions_satisfied():Bool {
 		return PreMatcher();
 	}
 
-	public function postconditions_satisfied():Bool {
+	inline public function postconditions_satisfied():Bool {
 		return PostMatcher();
 	}
 
-	public function update(delta_time:Float):Void {
+	/**
+	 * Run the action, invoking the given update function.
+	 *
+	 * @param delta_time - The time since the last update. 
+	 */
+	inline public function update(delta_time:Float):Void {
 		UpdateFunc(delta_time);
 	}
 }

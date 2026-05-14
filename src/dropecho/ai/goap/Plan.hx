@@ -1,39 +1,38 @@
 package dropecho.ai.goap;
 
 import dropecho.interop.AbstractArray;
+import dropecho.ds.Queue;
 
 class Plan {
-	public var Actions:AbstractArray<Action>;
-	public var CurrentAction:Int;
+	public var _actions(default, null):Queue<Action> = new Queue<Action>();
+
+	public var length(get, null):Int;
+	inline function get_length():Int return _actions.length;
 
 	public function new(actions:AbstractArray<Action> = null) {
-		Actions = actions != null ? actions : new AbstractArray<Action>();
-		CurrentAction = 0;
+		if (actions != null) {
+			_actions.enqueueMany(actions);
+		}
 	}
 
 	public function update(dT:Float = 0):Bool {
-		Actions[CurrentAction].update(dT);
-		return done();
-	}
-
-	public function done():Bool {
-		if (NoMoreActionsToExecute()) {
-			return true;
+		if (_actions.length > 0) {
+			_actions
+				.peek()
+				.update(dT);
 		}
 
-		if (CurrentActionIsComplete()) {
-			++CurrentAction;
-			return done();
+		return isCompleted();
+	}
+
+	public function isCompleted():Bool {
+		while (_actions.length > 0) {
+			if (_actions.peek().postconditions_satisfied()) {
+				_actions.dequeue();
+			} else {
+				return false;
+			}
 		}
-
-		return false;
-	}
-
-	private function NoMoreActionsToExecute():Bool {
-		return Actions.length < CurrentAction + 1;
-	}
-
-	private function CurrentActionIsComplete():Bool {
-		return Actions[CurrentAction].postconditions_satisfied();
+		return true;
 	}
 }

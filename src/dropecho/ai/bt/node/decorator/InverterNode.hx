@@ -12,8 +12,10 @@ class InverterNode extends DecoratorNode {
 		switch (status) {
 			case NODE_STATUS.SUCCESS:
 				return NODE_STATUS.FAILURE;
+
 			case NODE_STATUS.FAILURE:
 				return NODE_STATUS.SUCCESS;
+
 			case NODE_STATUS.RUNNING:
 				return NODE_STATUS.RUNNING;
 		}
