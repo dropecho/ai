@@ -26,23 +26,12 @@ class Plan {
 	}
 
 	public function isCompleted():Bool {
-		if (_actions.length == 0) {
-			return true;
-		}
-
-		if (_currentActionIsComplete()) {
-			_actions.dequeue();
-			return isCompleted();
-		}
-
-		return false;
-	}
-
-	inline private function _currentActionIsComplete():Bool {
-		if (_actions.length > 0) {
-			return _actions
-				.peek()
-				.postconditions_satisfied();
+		while (_actions.length > 0) {
+			if (_actions.peek().postconditions_satisfied()) {
+				_actions.dequeue();
+			} else {
+				return false;
+			}
 		}
 		return true;
 	}

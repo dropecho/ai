@@ -5,7 +5,7 @@ import dropecho.interop.AbstractFunc.Func_0;
 
 class Action {
 	public var ActionType:String;
-	public var Cost:Int;
+	public var Cost:Float;
 	public var Preconditions:Array<String> = new Array<String>();
 	public var Postconditions:Array<String> = new Array<String>();
 
@@ -18,7 +18,7 @@ class Action {
 	public function new(
 		actionType:String,
 		updateFunc:Float->Void,
-		cost:Int = 0,
+		cost:Float = 0,
 		?preconditions:Array<String>,
 		?postconditions:Array<String>,
 		?preMatcher:Func_0<Bool>,
