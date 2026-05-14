@@ -1,6 +1,51 @@
 # Project Todos
 
-## Bugs
+## Bugs (Round 2 — introduced by worktree agents)
+
+### B6 — `FSMTests` references undefined `TestState1`/`TestState2` and uses wrong lambda arity
+**File:** `test/fsm/FSMTests.hx:99,100,103,112,113,116`
+The worktree agent invented `TestState1` and `TestState2` — neither class exists. The existing test helpers are `WanderState` and `EatingState`. Additionally, `addAnyTransition` expects `Condition = Func_0<Bool>` (zero arguments), but the agent passed `_ -> ...` (one argument). Both tests fail to compile.
+
+Fix:
+- Replace `TestState1` with `WanderState`, `TestState2` with `EatingState`
+- Change `_ -> bb2.get('hunger') > 0` to `() -> bb2.get('hunger') > 0` (and same for `some_fact`)
+- The `toDot` assertion `dot.indexOf("TestState2") >= 0` should check for `"EatingState"` instead
+
+### B7 — `PlannerTests` references `_plan.Actions` which does not exist
+**File:** `test/goap/PlannerTests.hx:56-58`
+The worktree agent wrote `_plan.Actions.length` and `_plan.Actions[0]` — `Plan` has no `Actions` field. The internal field is `_actions` (a `Queue<Action>`, not an Array). Queue has no index-access operator.
+
+Fix using `_plan._actions` Queue API:
+- Replace `_plan.Actions.length` with `_plan._actions.length`
+- Replace `_plan.Actions[0]` + `_plan.Actions[1]` with two `dequeue()` calls and assert on the dequeued values (or convert to array first)
+
+### B8 — `toDot()` crashes if called before `changeToState()` and emits spurious "any" node
+**File:** `src/dropecho/ai/fsm/FSM.hx:120,137`
+Two issues:
+1. `toDot()` initialises `nodeOutput = "any\n"` unconditionally, so an FSM with no any-transitions still emits an orphaned `any` node in the DOT output.
+2. Line 137: `key == _currentState.getName()` has no null guard — crashes if `_currentState` is null (e.g., `toDot()` called before `changeToState()`).
+
+Fix:
+- Only append the `any` node and its edges when `_anyTransitions.length > 0`
+- Guard `_currentState.getName()` at line 137 with `_currentState != null &&`
+
+---
+
+## Refactors (Round 2)
+
+### R4 — `Plan._actions` is public with underscore prefix; no length accessor
+**File:** `src/dropecho/ai/goap/Plan.hx:7`
+`public var _actions(default, null):Queue<Action>` is publicly accessible but named with the private-by-convention `_` prefix. Tests reach into this internal field (`_plan._actions.peek()`, `_plan._actions.length`). Add a public `length` property and make `_actions` private:
+```haxe
+public var length(get, null):Int;
+function get_length():Int return _actions.length;
+private var _actions:Queue<Action> = new Queue<Action>();
+```
+Update `PlanTests.hx` and `PlannerTests.hx` callers to use `plan.length` and `plan._actions.peek()` → `plan` accessor methods.
+
+---
+
+## Bugs (Round 1 — fixed)
 
 ### B1 — `SucceederNode` has a double `return` keyword
 **File:** `src/dropecho/ai/bt/node/decorator/SucceederNode.hx:16`
