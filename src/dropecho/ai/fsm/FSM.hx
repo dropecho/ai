@@ -32,7 +32,10 @@ class FSM {
 	 * Given it has a transition, it invokes next.onEnter and current.onExit
 	 */
 	public function tick() {
-		_currentState?.tick();
+		if (_currentState == null) {
+			throw "FSM.tick() called before changeToState() — set an initial state first";
+		}
+		_currentState.tick();
 
 		var transition = getTransition();
 		if (transition != null) {
@@ -40,8 +43,12 @@ class FSM {
 		}
 	}
 
+	public function getCurrentState():IState {
+		return _currentState;
+	}
+
 	/**
-	 * @param state - The state to change to. 
+	 * @param state - The state to change to.
 	 */
 	public function changeToState(state:IState) {
 		_currentState?.onExit();

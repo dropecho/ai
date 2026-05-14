@@ -44,4 +44,17 @@ class PlannerTests extends Test {
 
 		Assert.equals(_plan._actions.peek(), _action2);
 	}
+
+	public function test_when_given_chained_actions_plan_should_contain_both() {
+		var actionA = new Action("get_weapon", deltaTime -> {}, 1, ["found_weapon"], ["has_weapon"]);
+		var actionB = new Action("find_weapon", deltaTime -> {}, 1, [], ["found_weapon"]);
+		var goal = new State(["has_weapon"]);
+		_planner = new Planner(goal, [actionA, actionB]);
+		_plan = _planner.generatePlan();
+
+		Assert.isTrue(_plan != null);
+		Assert.equals(2, _plan.Actions.length);
+		Assert.equals(actionB, _plan.Actions[0]);
+		Assert.equals(actionA, _plan.Actions[1]);
+	}
 }
