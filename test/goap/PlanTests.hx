@@ -45,4 +45,38 @@ class PlanTests extends Test {
 		_plan.update(0);
 		Assert.isTrue(_plan.isCompleted());
 	}
+
+	public function test_when_first_action_completes_second_gets_ticked() {
+		var action2Done = false;
+		var action2 = new Action("second", _ -> action2Done = true);
+		action2.PostMatcher = () -> action2Done;
+
+		_action1.PostMatcher = () -> _actionDone;
+		_plan = new Plan([_action1, action2]);
+
+		// First update: ticks action1 (_actionDone = true) → action1 completes → action2 is now current
+		_plan.update(0);
+		Assert.isTrue(_actionDone);
+		Assert.equals(1, _plan.length);
+
+		// Second update: ticks action2 (action2Done = true) → action2 completes
+		_plan.update(0);
+		Assert.isTrue(action2Done);
+		Assert.isTrue(_plan.isCompleted());
+	}
+
+	public function test_length_decrements_as_actions_complete() {
+		var action2 = new Action("second", _ -> {});
+		action2.PostMatcher = () -> true; // already satisfied
+
+		_action1.PostMatcher = () -> _actionDone;
+		_plan = new Plan([_action1, action2]);
+
+		Assert.equals(2, _plan.length);
+
+		// After update: action1 ticked (_actionDone=true) → both actions dequeued
+		_plan.update(0);
+		Assert.equals(0, _plan.length);
+		Assert.isTrue(_plan.isCompleted());
+	}
 }
