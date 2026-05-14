@@ -45,30 +45,16 @@ class PlannerTests extends Test {
 		Assert.equals(_plan._actions.peek(), _action2);
 	}
 
-	public function test_when_given_chained_actions_plan_should_contain_both() {
+	public function test_when_given_chained_actions_plan_should_contain_both_in_order() {
 		var actionA = new Action("get_weapon", deltaTime -> {}, 1, ["found_weapon"], ["has_weapon"]);
 		var actionB = new Action("find_weapon", deltaTime -> {}, 1, [], ["found_weapon"]);
 		var goal = new State(["has_weapon"]);
 		_planner = new Planner(goal, [actionA, actionB]);
 		_plan = _planner.generatePlan();
 
-		Assert.isTrue(_plan != null);
-		Assert.equals(2, _plan.Actions.length);
-		Assert.equals(actionB, _plan.Actions[0]);
-		Assert.equals(actionA, _plan.Actions[1]);
-	}
-
-	public function test_when_given_chained_actions_plan_should_contain_both() {
-		var actionA = new Action("action_a", deltaTime -> _actionDone = true, 1);
-		var actionB = new Action("action_b", deltaTime -> _actionDone = true, 1);
-		actionA.Postconditions = ["prerequisite_condition"];
-		actionB.Preconditions = ["prerequisite_condition"];
-		actionB.Postconditions = ["test_condition"];
-		_planner = new Planner(_goal, [actionA, actionB]);
-		_plan = _planner.generatePlan();
-
+		Assert.notNull(_plan);
 		Assert.equals(2, _plan.length);
-		Assert.equals(actionB, _plan.Actions[0]);
-		Assert.equals(actionA, _plan.Actions[1]);
+		Assert.equals(actionB, _plan._actions.dequeue());
+		Assert.equals(actionA, _plan._actions.dequeue());
 	}
 }
