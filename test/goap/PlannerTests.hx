@@ -44,4 +44,50 @@ class PlannerTests extends Test {
 
 		Assert.equals(_plan.Actions[0], _action2);
 	}
+
+	public function test_when_given_empty_action_list_plan_should_be_null() {
+		_planner = new Planner(_goal, []);
+		_plan = _planner.generatePlan();
+		Assert.isNull(_plan);
+	}
+
+	public function test_when_goal_already_satisfied_by_start_state_plan_is_empty() {
+		// Goal with no preconditions is satisfied by the empty start state
+		var emptyGoal = new State([]);
+		_planner = new Planner(emptyGoal, [_action1]);
+		_plan = _planner.generatePlan();
+		Assert.notNull(_plan);
+		Assert.equals(0, _plan.length);
+	}
+
+	public function test_globally_cheapest_plan_chosen_over_greedy() {
+		// Two paths to the goal:
+		//   Path A: direct action, cost 10
+		//   Path B: two actions, cost 1 + 1 = 2 (cheaper overall)
+		// A greedy-per-step planner would pick Path A; graph Dijkstra picks Path B.
+		var directAction = new Action("direct", _ -> {}, 10, [], ["goal_met"]);
+		var step1 = new Action("step1", _ -> {}, 1, [], ["intermediate"]);
+		var step2 = new Action("step2", _ -> {}, 1, ["intermediate"], ["goal_met"]);
+		var goal = new State(["goal_met"]);
+
+		_planner = new Planner(goal, [directAction, step1, step2]);
+		_plan = _planner.generatePlan();
+
+		Assert.notNull(_plan);
+		Assert.equals(2, _plan.length);
+		Assert.equals(step1, _plan._actions.dequeue());
+		Assert.equals(step2, _plan._actions.dequeue());
+	}
+
+	public function test_circular_dependencies_do_not_infinite_loop() {
+		// Action A needs "b", produces "a". Action B needs "a", produces "b".
+		// Circular — no valid plan. Should return null without hanging.
+		var actionA = new Action("a", _ -> {}, 1, ["b"], ["a"]);
+		var actionB = new Action("b", _ -> {}, 1, ["a"], ["b"]);
+		var goal = new State(["a"]);
+
+		_planner = new Planner(goal, [actionA, actionB]);
+		_plan = _planner.generatePlan();
+		Assert.isNull(_plan);
+	}
 }
