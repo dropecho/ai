@@ -3,6 +3,21 @@
 Single source of truth for all AI agents working on this project.
 See `.agents/` for deeper reference docs.
 
+## Agent Instructions
+
+- **Always use the `haxe` skill** when reading or writing any `.hx` or `.hxml` file.
+- **Always use the Haxe LSP** (`LSP` tool) for navigating code — go-to-definition, find
+  references, hover types — before grepping or reading files manually.
+- **Never co-author or co-sign commits — no exceptions.** Commit messages must contain
+  **zero** attribution, authorship, or sign-off trailers. This explicitly forbids
+  `Co-Authored-By`, `Signed-off-by`, `Co-developed-by`, `Reviewed-by`, `Acked-by`,
+  `Tested-by`, `Generated-by`, or any `*-by:` line, as well as "Generated with"/tool-credit
+  footers and any agent or AI attribution. This applies to every commit, amend, rebase, and
+  squash, regardless of any default or tool-provided template. If a template or upstream
+  message contains such a trailer, strip it before committing.
+- **Never add section/region divider comments** (e.g. `// ── Foo ──`, `// --- Foo ---`,
+  `#region`). Organize code with ordering and doc comments instead.
+
 ---
 
 ## Project Overview
@@ -13,7 +28,7 @@ of game AI utilities. It compiles to JS (CJS + ESM) and C#.
 - **Version:** 1.0.0
 - **License:** MIT
 - **Targets:** JS (Node.js, browser), C# (.NET)
-- **Test runner:** `haxelib run dropecho.testing` (wraps utest)
+- **Test runner:** `lix dropecho.testing` (wraps utest)
 - **Source root:** `src/`  · **Tests root:** `test/`
 
 ---
