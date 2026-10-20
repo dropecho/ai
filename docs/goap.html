@@ -23,14 +23,16 @@
     <main>
       <h1>Goal planner</h1>
       <p class="lede">
-        The Planner searches every World state reachable from the empty one, using each Action's
-        preconditions and postconditions, and returns the cheapest Plan that makes the Goal true,
-        or <code>null</code> when there is none.
+        The Planner asks the game which Condition names are true now (the World state), searches
+        every World state reachable from there using each Action's preconditions and
+        postconditions, and returns the cheapest Plan that makes the Goal true, or
+        <code>null</code> when there is none.
       </p>
       <p>
         By default, <code>buy_weapon</code> reaches the Goal in one step for Cost 10, but
         <code>find_weapon</code> then <code>get_weapon</code> costs 2 in total, so the Planner picks
-        the two-step Plan. Change the Costs or switch Actions off and watch the Plan change.
+        the two-step Plan. Change the Costs, switch Actions off, or mark Conditions as already true
+        and watch the Plan change.
       </p>
 
       <section class="panel" aria-labelledby="actions-heading">
@@ -43,6 +45,7 @@
             <option value="has_weapon,found_wood">has_weapon and found_wood</option>
           </select>
         </div>
+        <div id="start-conditions" class="controls" role="group" aria-label="Conditions true at the start"></div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -70,7 +73,9 @@
           <h2 id="run-heading" class="h3">Run the Plan</h2>
           <p class="muted">
             Each tick, <code>plan.update(dt)</code> updates the front Action, then drops every front
-            Action whose done check is true. Here an Action is done after its number of ticks.
+            Action that is done. These Actions have no done check of their own, so each is done once
+            its postconditions are in the World state; here an Action makes them true after its
+            number of ticks.
           </p>
           <div class="controls" role="group" aria-label="Plan controls">
             <button id="step" class="primary">Step</button>
@@ -78,25 +83,34 @@
             <button id="restart">Restart</button>
           </div>
           <p id="run-status" aria-live="polite"></p>
+          <p id="world" class="muted"></p>
           <ol id="run" class="tree"></ol>
         </section>
       </div>
 
       <h2>The code</h2>
-      <pre><code>const findWeapon = new goap.Action("find_weapon", (dt) =&gt; progress.find++, 1,
-  [], ["found_weapon"], null, () =&gt; progress.find &gt;= 2);
-const getWeapon = new goap.Action("get_weapon", (dt) =&gt; progress.get++, 1,
-  ["found_weapon"], ["has_weapon"], null, () =&gt; progress.get &gt;= 1);
-const buyWeapon = new goap.Action("buy_weapon", (dt) =&gt; progress.buy++, 10,
-  [], ["has_weapon"], null, () =&gt; progress.buy &gt;= 3);
+      <pre><code>const world = new Set(); // the Condition names true in the game
+const worldState = () =&gt; [...world];
 
-const plan = new goap.Planner(new goap.State(["has_weapon"]), [buyWeapon, findWeapon, getWeapon])
+const findWeapon = new goap.Action("find_weapon", (dt) =&gt; world.add("found_weapon"), 1,
+  [], ["found_weapon"]);
+const getWeapon = new goap.Action("get_weapon", (dt) =&gt; world.add("has_weapon"), 1,
+  ["found_weapon"], ["has_weapon"]);
+const buyWeapon = new goap.Action("buy_weapon", (dt) =&gt; world.add("has_weapon"), 10,
+  [], ["has_weapon"]);
+
+const plan = new goap.Planner(new goap.Goal(["has_weapon"]), [buyWeapon, findWeapon, getWeapon], worldState)
   .generatePlan(); // find_weapon, get_weapon; or null when no Plan reaches the Goal
 
+plan.currentAction();    // the Action running now
+plan.remainingActions(); // an Array of the Actions left
 const done = plan.update(dt); // once per tick; true when every Action is done</code></pre>
       <p>
-        The done check is the last constructor argument. It defaults to always true, which would
-        drop every Action on the first update, so pass a real one.
+        An Action without a done check of its own is done once all its postconditions are in the
+        World state, so the Plan needs a world state provider (the Planner passes its own on). To
+        decide differently, pass a done check, a <code>() =&gt; boolean</code>, as the last
+        <code>goap.Action</code> argument. A Plan that holds an Action with neither throws when it
+        is created.
       </p>
       <p><a href="https://github.com/dropecho/ai/blob/main/docs/goap.js">Full source of this demo</a></p>
     </main>

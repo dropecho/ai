@@ -1,5 +1,7 @@
 "use strict";
 
+const CONDITION_NAMES = ["found_weapon", "found_wood", "has_weapon"];
+
 const ACTION_SPECS = [
   { name: "buy_weapon", cost: 10, needs: [], makes: ["has_weapon"], ticks: 3 },
   { name: "find_weapon", cost: 1, needs: [], makes: ["found_weapon"], ticks: 2 },
@@ -8,39 +10,39 @@ const ACTION_SPECS = [
   { name: "carve_club", cost: 1, needs: ["found_wood"], makes: ["has_weapon"], ticks: 2 },
 ].map((spec) => ({ ...spec, enabled: true }));
 
-// Each run gets fresh Actions, so their progress starts at zero.
-function createAction(spec, progress) {
-  const update = () => {
-    progress.set(spec.name, (progress.get(spec.name) ?? 0) + 1);
+// The game's world: an Action makes its postconditions true here once it has run its ticks.
+// No Action has a done check of its own, so the Plan drops each one once its postconditions are true.
+function createAction(spec, progress, world) {
+  const onUpdate = () => {
+    const ticksRun = (progress.get(spec.name) ?? 0) + 1;
+    progress.set(spec.name, ticksRun);
+    if (ticksRun >= spec.ticks) {
+      spec.makes.forEach((condition) => world.add(condition));
+    }
   };
-  const isDone = () => (progress.get(spec.name) ?? 0) >= spec.ticks;
-  return new goap.Action(spec.name, update, spec.cost, spec.needs, spec.makes, null, isDone);
+  return new goap.Action(spec.name, onUpdate, spec.cost, spec.needs, spec.makes);
 }
 
-function makePlan(specs, goalConditions) {
+function makePlan(specs, goalConditions, startConditions) {
   const progress = new Map();
-  const actions = specs.filter((spec) => spec.enabled).map((spec) => createAction(spec, progress));
-  const plan = new goap.Planner(new goap.State(goalConditions), actions).generatePlan();
-  return { plan, progress, actions: plan === null ? [] : remainingActions(plan) };
-}
-
-// A Plan iterates with Haxe's hasNext/next, not the JS iterator protocol.
-function remainingActions(plan) {
-  const actions = [];
-  const iterator = plan.iterator();
-  while (iterator.hasNext()) {
-    actions.push(iterator.next());
-  }
-  return actions;
+  const world = new Set(startConditions);
+  const worldState = () => [...world];
+  const actions = specs.filter((spec) => spec.enabled).map((spec) => createAction(spec, progress, world));
+  const plan = new goap.Planner(new goap.Goal(goalConditions), actions, worldState).generatePlan();
+  return { plan, progress, world, actions: plan === null ? [] : plan.remainingActions() };
 }
 
 function totalCost(actions) {
-  return actions.reduce((sum, action) => sum + action.Cost, 0);
+  return actions.reduce((sum, action) => sum + action.cost, 0);
 }
 
-function cheapestOneStep(specs, goalConditions) {
+function cheapestOneStep(specs, goalConditions, startConditions) {
+  const missing = goalConditions.filter((c) => !startConditions.includes(c));
   const reachesGoalDirectly = (spec) =>
-    spec.enabled && spec.needs.length === 0 && goalConditions.every((c) => spec.makes.includes(c));
+    spec.enabled &&
+    missing.length > 0 &&
+    spec.needs.every((c) => startConditions.includes(c)) &&
+    missing.every((c) => spec.makes.includes(c));
   const candidates = specs.filter(reachesGoalDirectly);
   candidates.sort((a, b) => a.cost - b.cost);
   return candidates[0] ?? null;
@@ -73,17 +75,34 @@ function renderActionRow(spec, onChange) {
   ]);
 }
 
+function renderStartConditions(container, startConditions, onChange) {
+  const boxes = CONDITION_NAMES.map((condition) => {
+    const box = el("input", { type: "checkbox" });
+    box.checked = startConditions.has(condition);
+    box.addEventListener("change", () => {
+      if (box.checked) {
+        startConditions.add(condition);
+      } else {
+        startConditions.delete(condition);
+      }
+      onChange();
+    });
+    return el("label", {}, [box, " ", el("code", { text: condition })]);
+  });
+  container.replaceChildren(el("span", { text: "True at the start:" }), ...boxes);
+}
+
 function renderPlan(container, run, oneStep) {
   if (run.plan === null) {
     container.replaceChildren(
       el("p", { class: "callout" }, [el("strong", { text: "No Plan. " }), "generatePlan() returned null."]),
-      el("p", { class: "muted", text: "No sequence of the Actions in use reaches the Goal from the empty World state." }),
+      el("p", { class: "muted", text: "No sequence of the Actions in use reaches the Goal from the starting World state." }),
     );
     return;
   }
   const cost = totalCost(run.actions);
   const steps = run.actions.map((action) =>
-    el("li", {}, [el("code", { text: action.ActionType }), ` (Cost ${action.Cost})`]),
+    el("li", {}, [el("code", { text: action.name }), ` (Cost ${action.cost})`]),
   );
   const parts = [
     el("p", { class: "callout", text: `Total Cost ${cost}` }),
@@ -101,31 +120,34 @@ function renderPlan(container, run, oneStep) {
   container.replaceChildren(...parts);
 }
 
-function renderRun(list, statusEl, run) {
+function renderRun(list, statusEl, worldEl, run) {
+  const conditions = [...run.world];
+  worldEl.textContent = conditions.length === 0 ? "World state: (empty)" : `World state: ${conditions.join(", ")}`;
   if (run.plan === null) {
     list.replaceChildren();
     statusEl.textContent = "Nothing to run.";
     return;
   }
-  const current = run.plan.get_currentAction();
+  const current = run.plan.currentAction();
+  const remaining = run.plan.remainingActions();
   const items = run.actions.map((action) => {
-    const done = run.progress.get(action.ActionType) ?? 0;
-    const spec = ACTION_SPECS.find((s) => s.name === action.ActionType);
-    const isDropped = !remainingActions(run.plan).includes(action);
+    const ticksRun = run.progress.get(action.name) ?? 0;
+    const spec = ACTION_SPECS.find((s) => s.name === action.name);
+    const isDropped = !remaining.includes(action);
     const label = isDropped ? "done" : action === current ? "current" : "pending";
-    const bar = el("div", { class: "bar", role: "img", "aria-label": `${done} of ${spec.ticks} ticks` }, [
-      el("span", { style: `width: ${Math.min(100, (done / spec.ticks) * 100)}%` }),
+    const bar = el("div", { class: "bar", role: "img", "aria-label": `${ticksRun} of ${spec.ticks} ticks` }, [
+      el("span", { style: `width: ${Math.min(100, (ticksRun / spec.ticks) * 100)}%` }),
     ]);
     return el("li", {}, [
       el("span", { class: `node${action === current ? " ran" : ""}` }, [
-        el("code", { text: action.ActionType }),
-        el("span", { class: "kind", text: `${label} · ${Math.min(done, spec.ticks)}/${spec.ticks}` }),
+        el("code", { text: action.name }),
+        el("span", { class: "kind", text: `${label} · ${Math.min(ticksRun, spec.ticks)}/${spec.ticks}` }),
       ]),
       bar,
     ]);
   });
   list.replaceChildren(...items);
-  statusEl.textContent = run.plan.isCompleted() ? "Plan completed." : `${run.plan.get_length()} Action(s) left.`;
+  statusEl.textContent = run.plan.isCompleted() ? "Plan completed." : `${run.plan.length()} Action(s) left.`;
 }
 
 function setupPage() {
@@ -133,6 +155,8 @@ function setupPage() {
   const planEl = document.getElementById("plan");
   const runEl = document.getElementById("run");
   const runStatusEl = document.getElementById("run-status");
+  const worldEl = document.getElementById("world");
+  const startConditions = new Set();
   let run = null;
 
   function goalConditions() {
@@ -140,9 +164,11 @@ function setupPage() {
   }
 
   function replan() {
-    run = makePlan(ACTION_SPECS, goalConditions());
-    renderPlan(planEl, run, cheapestOneStep(ACTION_SPECS, goalConditions()));
-    renderRun(runEl, runStatusEl, run);
+    ticker.pause();
+    const start = [...startConditions];
+    run = makePlan(ACTION_SPECS, goalConditions(), start);
+    renderPlan(planEl, run, cheapestOneStep(ACTION_SPECS, goalConditions(), start));
+    renderRun(runEl, runStatusEl, worldEl, run);
   }
 
   function step() {
@@ -151,17 +177,15 @@ function setupPage() {
       return;
     }
     run.plan.update(1);
-    renderRun(runEl, runStatusEl, run);
+    renderRun(runEl, runStatusEl, worldEl, run);
   }
 
   const ticker = createTicker(step, document.getElementById("play"), 700);
   document.getElementById("step").addEventListener("click", step);
-  document.getElementById("restart").addEventListener("click", () => {
-    ticker.pause();
-    replan();
-  });
+  document.getElementById("restart").addEventListener("click", replan);
   goalEl.addEventListener("change", replan);
 
+  renderStartConditions(document.getElementById("start-conditions"), startConditions, replan);
   const rows = ACTION_SPECS.map((spec) => renderActionRow(spec, replan));
   document.getElementById("actions").replaceChildren(...rows);
   replan();
