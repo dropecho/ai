@@ -74,6 +74,12 @@ class Std {
 	}
 }
 Std.__name__ = true;
+class StringTools {
+	static replace(s,sub,by) {
+		return s.split(sub).join(by);
+	}
+}
+StringTools.__name__ = true;
 class dropecho_ai_Blackboard {
 	constructor() {
 		this._facts = dropecho_interop_AbstractMap._new();
@@ -100,6 +106,23 @@ class dropecho_ai_Blackboard {
 		let value = (Object.prototype.hasOwnProperty.call(this._facts,key == null ? "null" : "" + key) ? this._facts[key == null ? "null" : "" + key] : 0) - 1;
 		this1[key == null ? "null" : "" + key] = value;
 		return value;
+	}
+	keys() {
+		let _g = [];
+		let _g1 = 0;
+		let _g2 = Reflect.fields(this._facts);
+		while(_g1 < _g2.length) _g.push(_g2[_g1++]);
+		_g.sort(dropecho_ai_Blackboard.compareNames);
+		return _g;
+	}
+	static compareNames(a,b) {
+		if(a < b) {
+			return -1;
+		}
+		if(a > b) {
+			return 1;
+		}
+		return 0;
 	}
 }
 $hx_exports["Blackboard"] = dropecho_ai_Blackboard;
@@ -176,7 +199,7 @@ dropecho_ai_TaskBank.__name__ = true;
 class dropecho_ai_bt_BehaviorTree {
 	constructor(root) {
 		if(root == null) {
-			throw haxe_Exception.thrown("Root cannot be null");
+			throw haxe_Exception.thrown("BehaviorTree needs a root node, but got null. Pass the node to run each tick, e.g. new BehaviorTree(new SequenceNode([...])).");
 		}
 		this.child = root;
 	}
@@ -199,9 +222,6 @@ class dropecho_ai_bt_node_LeafNode {
 	init(context) {
 		this.context = context;
 	}
-	execute() {
-		throw new dropecho_util_NotImplementedException();
-	}
 }
 $hx_exports["bt"]["LeafNode"] = dropecho_ai_bt_node_LeafNode;
 dropecho_ai_bt_node_LeafNode.__name__ = true;
@@ -222,10 +242,29 @@ class dropecho_ai_bt_node_TaskNode {
 }
 $hx_exports["bt"]["TaskNode"] = dropecho_ai_bt_node_TaskNode;
 dropecho_ai_bt_node_TaskNode.__name__ = true;
+class dropecho_ai_bt_node_composite_ChildCursor {
+	constructor(children) {
+		this.children = children;
+		this.index = 0;
+	}
+	current() {
+		return this.children[this.index];
+	}
+	advance() {
+		this.index++;
+	}
+	isOnLast() {
+		return this.index >= this.children.length - 1;
+	}
+	reset() {
+		this.index = 0;
+	}
+}
+dropecho_ai_bt_node_composite_ChildCursor.__name__ = true;
 class dropecho_ai_bt_node_composite_CompositeNode {
 	constructor(children) {
 		this.children = children;
-		this.childIterator = new dropecho_util_CurrentIterator(children);
+		this.childCursor = new dropecho_ai_bt_node_composite_ChildCursor(children);
 	}
 	init(context) {
 		this.context = context;
@@ -238,16 +277,16 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 	}
 	runChildren(decidingStatus) {
 		while(true) {
-			let childStatus = this.childIterator.current().execute();
+			let childStatus = this.childCursor.current().execute();
 			if(childStatus == 2) {
 				return 2;
 			}
-			let isLastChild = this.childIterator.hasNext() == false;
+			let isLastChild = this.childCursor.isOnLast();
 			if(childStatus == decidingStatus || isLastChild) {
-				this.childIterator.reset();
+				this.childCursor.reset();
 				return childStatus;
 			}
-			this.childIterator.next();
+			this.childCursor.advance();
 		}
 	}
 }
@@ -373,42 +412,30 @@ class dropecho_ai_fsm_FSM {
 		this._currentState = state;
 	}
 	addTransition(fromState,toState,condition) {
-		let t = new dropecho_ai_fsm_Transition(toState,condition);
-		let transitions = null;
-		if(this._transitions.h.__keys__[fromState.__id__] != null) {
-			transitions = this._transitions.h[fromState.__id__];
-		} else {
+		let transitions = this._transitions.h[fromState.__id__];
+		if(transitions == null) {
 			transitions = [];
 			this._transitions.set(fromState,transitions);
 		}
-		transitions.push(t);
+		transitions.push(new dropecho_ai_fsm_Transition(toState,condition));
 	}
 	addAnyTransition(to,condition) {
 		this._anyTransitions.push(new dropecho_ai_fsm_Transition(to,condition));
 	}
 	getTransition() {
 		let _g = 0;
-		let _g1 = this._anyTransitions;
+		let _g1 = [this._anyTransitions,this._currentState == null ? null : this._transitions.h[this._currentState.__id__]];
 		while(_g < _g1.length) {
-			let t = _g1[_g];
+			let transitions = _g1[_g];
 			++_g;
-			if(t.condition()) {
-				return t;
+			if(transitions == null) {
+				continue;
 			}
-		}
-		if(this._currentState == null) {
-			return null;
-		}
-		if(this._transitions.h.__keys__[this._currentState.__id__] != null == false) {
-			return null;
-		}
-		let _currentTransitions = this._transitions.h[this._currentState.__id__];
-		if(_currentTransitions != null) {
-			let _g = 0;
-			while(_g < _currentTransitions.length) {
-				let t = _currentTransitions[_g];
-				++_g;
-				if(t.condition()) {
+			let _g2 = 0;
+			while(_g2 < transitions.length) {
+				let t = transitions[_g2];
+				++_g2;
+				if(t.to != this._currentState && t.condition()) {
 					return t;
 				}
 			}
@@ -416,137 +443,195 @@ class dropecho_ai_fsm_FSM {
 		return null;
 	}
 	toDot() {
-		let nodeOutput = "";
-		let edgeOutput = "";
-		let activeTransition = this.getTransition();
-		let activeTransitionName = activeTransition == null ? "" : activeTransition.to.getName();
-		if(this._anyTransitions.length > 0) {
-			nodeOutput = "any\n";
-			let _g = 0;
-			let _g1 = this._anyTransitions;
-			while(_g < _g1.length) {
-				let any = _g1[_g];
-				++_g;
-				edgeOutput += "\n any -> " + any.to.getName();
-				if(activeTransitionName == any.to.getName() && this._anyTransitions.includes(activeTransition)) {
-					edgeOutput += "[class=\"active\"]";
-				}
+		let next = this.getTransition();
+		let nodeIds = new haxe_ds_ObjectMap();
+		let states = [];
+		let edgeLines = [];
+		let nodeId = function(state) {
+			if(nodeIds.h.__keys__[state.__id__] != null == false) {
+				nodeIds.set(state,"s" + states.length);
+				states.push(state);
 			}
-		}
+			return nodeIds.h[state.__id__];
+		};
+		let addEdges = function(fromId,transitions) {
+			let _g = 0;
+			while(_g < transitions.length) {
+				let t = transitions[_g];
+				++_g;
+				let attributes = t == next ? " [class=\"active\"]" : "";
+				edgeLines.push("  " + fromId + " -> " + nodeId(t.to) + attributes + ";");
+			}
+		};
+		addEdges("any",this._anyTransitions);
 		let map = this._transitions;
 		let _g_keys = map.keys();
 		while(_g_keys.hasNext()) {
 			let key = _g_keys.next();
 			let _g_value = map.get(key);
-			let key1 = key.getName();
-			nodeOutput = nodeOutput + "\n" + key1;
-			let _g = 0;
-			while(_g < _g_value.length) {
-				let edge = _g_value[_g];
-				++_g;
-				edgeOutput += "\n " + key1 + " -> " + edge.to.getName();
-				if(activeTransition == edge) {
-					edgeOutput += "[class=\"active\"]";
-				}
-			}
-			edgeOutput += "\n " + key1 + " -> " + key1;
-			if(key == this._currentState) {
-				if(activeTransition == null) {
-					nodeOutput += "[class=\"active\"]";
-					edgeOutput += "[class=\"active\"]";
-				}
-			} else if(activeTransitionName == key1) {
-				nodeOutput += "[class=\"active\"]";
-			}
+			addEdges(nodeId(key),_g_value);
 		}
-		return "\n      digraph {\n        rankdir=LR\n\n        " + nodeOutput + "\n        " + edgeOutput + "\n      }\n    ";
+		if(this._currentState != null) {
+			nodeId(this._currentState);
+		}
+		let _g = [];
+		let _g1 = 0;
+		while(_g1 < states.length) {
+			let state = states[_g1];
+			++_g1;
+			_g.push("  " + nodeIds.h[state.__id__] + " [" + this.nodeAttributes(state,next) + "];");
+		}
+		if(this._anyTransitions.length > 0) {
+			_g.push("  any [label=\"any\", shape=plaintext];");
+		}
+		return ["digraph {","  rankdir=LR;"].concat(_g).concat(edgeLines).concat(["}"]).join("\n");
+	}
+	nodeAttributes(state,next) {
+		let attributes = ["label=\"" + StringTools.replace(StringTools.replace(state.getName(),"\\","\\\\"),"\"","\\\"") + "\""];
+		if(state == this._currentState) {
+			attributes.push("class=\"current\"");
+		}
+		if(next != null && state == next.to) {
+			attributes.push("class=\"next\"");
+		}
+		return attributes.join(", ");
 	}
 }
 $hx_exports["fsm"]["FSM"] = dropecho_ai_fsm_FSM;
 dropecho_ai_fsm_FSM.__name__ = true;
 class dropecho_ai_goap_Action {
-	constructor(actionType,updateFunc,cost,preconditions,postconditions,preMatcher,postMatcher) {
+	constructor(name,onUpdate,cost,preconditions,postconditions,startCheck,doneCheck) {
 		if(cost == null) {
 			cost = 0;
 		}
-		this.PostMatcher = function() {
+		this.doneCheck = null;
+		this.startCheck = function() {
 			return true;
 		};
-		this.PreMatcher = function() {
-			return true;
-		};
-		this.Postconditions = [];
-		this.Preconditions = [];
-		this.ActionType = actionType;
-		this.UpdateFunc = updateFunc;
-		this.Cost = cost;
-		this.Preconditions = preconditions != null ? preconditions : this.Preconditions;
-		this.Postconditions = postconditions != null ? postconditions : this.Postconditions;
-		this.PreMatcher = preMatcher != null ? preMatcher : this.PreMatcher;
-		this.PostMatcher = postMatcher != null ? postMatcher : this.PostMatcher;
+		this.postconditions = [];
+		this.preconditions = [];
+		this.name = name;
+		this.onUpdate = onUpdate;
+		this.cost = cost;
+		this.preconditions = preconditions != null ? preconditions : this.preconditions;
+		this.postconditions = postconditions != null ? postconditions : this.postconditions;
+		this.startCheck = startCheck != null ? startCheck : this.startCheck;
+		this.doneCheck = doneCheck;
 	}
-	preconditions_satisfied() {
-		return this.PreMatcher();
+	canStart() {
+		return this.startCheck();
 	}
-	postconditions_satisfied() {
-		return this.PostMatcher();
+	isDone(worldState) {
+		if(this.doneCheck != null) {
+			return this.doneCheck();
+		}
+		let _g = 0;
+		let _g1 = this.postconditions;
+		while(_g < _g1.length) if(worldState.indexOf(_g1[_g++]) < 0) {
+			return false;
+		}
+		return true;
 	}
-	update(delta_time) {
-		this.UpdateFunc(delta_time);
+	update(deltaTime) {
+		this.onUpdate(deltaTime);
 	}
 }
 $hx_exports["goap"]["Action"] = dropecho_ai_goap_Action;
 dropecho_ai_goap_Action.__name__ = true;
+class dropecho_ai_goap_Goal {
+	constructor(conditions) {
+		this.conditions = conditions;
+	}
+}
+$hx_exports["goap"]["Goal"] = dropecho_ai_goap_Goal;
+dropecho_ai_goap_Goal.__name__ = true;
 class dropecho_ai_goap_Plan {
-	constructor(actions) {
+	constructor(actions,worldState) {
 		this._actions = new dropecho_ds_Queue();
+		this._worldState = worldState;
 		if(actions != null) {
 			let _g = 0;
 			let _g1 = actions;
-			while(_g < _g1.length) this._actions._data.add(_g1[_g++]);
+			while(_g < _g1.length) {
+				let action = _g1[_g];
+				++_g;
+				this._requireWayToFinish(action);
+				this._actions._data.add(action);
+			}
 		}
 	}
-	get_length() {
-		return this._actions._data.length;
+	update(deltaTime) {
+		if(deltaTime == null) {
+			deltaTime = 0;
+		}
+		if(this._actions._data.length > 0) {
+			this._actions._data.first().onUpdate(deltaTime);
+		}
+		return this.isCompleted();
 	}
-	get_currentAction() {
+	currentAction() {
 		if(this._actions._data.length > 0) {
 			return this._actions._data.first();
 		} else {
 			return null;
 		}
 	}
-	update(dT) {
-		if(dT == null) {
-			dT = 0;
-		}
-		if(this._actions._data.length > 0) {
-			this._actions._data.first().UpdateFunc(dT);
-		}
-		return this.isCompleted();
+	length() {
+		return this._actions._data.length;
 	}
 	iterator() {
 		return new haxe_ds__$List_ListIterator(this._actions._data.h);
 	}
+	remainingActions() {
+		let _g = [];
+		let _g_head = this._actions._data.h;
+		while(_g_head != null) {
+			let val = _g_head.item;
+			_g_head = _g_head.next;
+			_g.push(val);
+		}
+		return _g;
+	}
 	isCompleted() {
-		while(this._actions._data.length > 0) if(this._actions._data.first().PostMatcher()) {
-			this._actions._data.pop();
-		} else {
-			return false;
+		let worldState = null;
+		while(this._actions._data.length > 0) {
+			let action = this._actions._data.first();
+			if(action.doneCheck == null && worldState == null) {
+				worldState = this._currentWorldState();
+			}
+			if(action.isDone(worldState)) {
+				this._actions._data.pop();
+			} else {
+				return false;
+			}
 		}
 		return true;
+	}
+	_currentWorldState() {
+		if(this._worldState != null) {
+			return this._worldState();
+		} else {
+			return [];
+		}
+	}
+	_requireWayToFinish(action) {
+		if(action.doneCheck == null && this._worldState == null) {
+			throw haxe_Exception.thrown("Action \"" + action.name + "\" has no done check and the Plan has no world state provider, so it can never tell when the Action is done. " + "Either pass a world state provider, a function returning the Condition names true right now, to the Planner or Plan " + "(new Planner(goal, actions, () -> currentConditions())), or give the Action its own done check as the last constructor argument " + ("(new Action(\"" + action.name + "\", onUpdate, cost, preconditions, postconditions, null, () -> isFinished()))."));
+		}
 	}
 }
 $hx_exports["goap"]["Plan"] = dropecho_ai_goap_Plan;
 dropecho_ai_goap_Plan.__name__ = true;
 class dropecho_ai_goap_Planner {
-	constructor(goal,availableActions) {
+	constructor(goal,availableActions,worldState) {
 		this._goal = goal;
 		this._availableActions = availableActions;
+		this._worldState = worldState;
 	}
 	generatePlan() {
 		let graph = new dropecho_ds_Graph();
-		let start = graph.createNode([],this._stateKey([]));
+		let startConditions = this._startConditions();
+		let start = graph.createNode(startConditions,this._stateKey(startConditions));
 		let goalNodes = this._expandWorldStates(graph,start);
 		let _gthis = this;
 		let search = dropecho_ds_graph_Search.dijkstra(start,function(from,to) {
@@ -565,7 +650,7 @@ class dropecho_ai_goap_Planner {
 		while(frontier._data.length > 0) {
 			let current = frontier._data.pop();
 			let conditions = current.value;
-			if(this._hasAll(conditions,this._goal.Preconditions)) {
+			if(this._hasAll(conditions,this._goal.conditions)) {
 				goalNodes.push(current);
 			}
 			let _g = 0;
@@ -573,8 +658,8 @@ class dropecho_ai_goap_Planner {
 			while(_g < _g1.length) {
 				let action = _g1[_g];
 				++_g;
-				if(this._hasAll(conditions,action.Preconditions)) {
-					let nextConditions = this._applyPostconditions(conditions,action.Postconditions);
+				if(this._hasAll(conditions,action.preconditions)) {
+					let nextConditions = this._withConditions(conditions,action.postconditions);
 					let nextKey = this._stateKey(nextConditions);
 					let isNewWorldState = Object.prototype.hasOwnProperty.call(graph.nodes,nextKey == null ? "null" : "" + nextKey) == false;
 					if(isNewWorldState) {
@@ -582,7 +667,7 @@ class dropecho_ai_goap_Planner {
 						frontier._data.add(value);
 					}
 					let existing = graph.edgeData(current.label,nextKey);
-					if(existing == null || existing.Cost > action.Cost) {
+					if(existing == null || existing.cost > action.cost) {
 						graph.addUniEdge(current.label,nextKey,action);
 					}
 				}
@@ -593,7 +678,7 @@ class dropecho_ai_goap_Planner {
 	_actionCost(graph,from,to) {
 		let action = graph.edgeData(from.label,to.label);
 		if(action != null) {
-			return action.Cost;
+			return action.cost;
 		} else {
 			return Infinity;
 		}
@@ -628,12 +713,15 @@ class dropecho_ai_goap_Planner {
 			actions.unshift(action);
 			current = graph.nodes[prevLabel == null ? "null" : "" + prevLabel];
 		}
-		return new dropecho_ai_goap_Plan(actions);
+		return new dropecho_ai_goap_Plan(actions,this._worldState);
+	}
+	_startConditions() {
+		return this._withConditions([],this._worldState != null ? this._worldState() : []);
 	}
 	_stateKey(conditions) {
 		let sorted = conditions.slice();
 		sorted.sort(Reflect.compare);
-		return sorted.join(",");
+		return JSON.stringify(sorted);
 	}
 	_hasAll(conditions,required) {
 		let _g = 0;
@@ -642,14 +730,14 @@ class dropecho_ai_goap_Planner {
 		}
 		return true;
 	}
-	_applyPostconditions(conditions,postconditions) {
+	_withConditions(conditions,added) {
 		let result = conditions.slice();
 		let _g = 0;
-		while(_g < postconditions.length) {
-			let post = postconditions[_g];
+		while(_g < added.length) {
+			let condition = added[_g];
 			++_g;
-			if(result.indexOf(post) < 0) {
-				result.push(post);
+			if(result.indexOf(condition) < 0) {
+				result.push(condition);
 			}
 		}
 		return result;
@@ -657,17 +745,6 @@ class dropecho_ai_goap_Planner {
 }
 $hx_exports["goap"]["Planner"] = dropecho_ai_goap_Planner;
 dropecho_ai_goap_Planner.__name__ = true;
-class dropecho_ai_goap_State {
-	constructor(preconditions,relevance) {
-		if(relevance == null) {
-			relevance = 0;
-		}
-		this.Relevance = relevance;
-		this.Preconditions = preconditions;
-	}
-}
-$hx_exports["goap"]["State"] = dropecho_ai_goap_State;
-dropecho_ai_goap_State.__name__ = true;
 class dropecho_ai_utility_Motive {
 	constructor(name,value) {
 		this.name = name;
@@ -684,7 +761,7 @@ class dropecho_ai_utility_UtilityAgent {
 		return Lambda.fold(this.motives,$bind(this,this.foldToLowestMotive),null);
 	}
 	foldToLowestMotive(motive,result) {
-		if(result != null && result.value < motive.value) {
+		if(result != null && result.value <= motive.value) {
 			return result;
 		}
 		return motive;
@@ -1185,37 +1262,12 @@ class dropecho_interop_JSAbstractMapKeyValueIterator {
 	}
 }
 dropecho_interop_JSAbstractMapKeyValueIterator.__name__ = true;
-class dropecho_util_CurrentIterator {
-	constructor(array) {
-		this.array = array;
-		this.i = 0;
-	}
-	next() {
-		return this.array[this.i++];
-	}
-	hasNext() {
-		return this.i < this.array.length - 1;
-	}
-	current() {
-		return this.array[this.i];
-	}
-	reset() {
-		this.i = 0;
-	}
-}
-dropecho_util_CurrentIterator.__name__ = true;
 class haxe_Exception extends Error {
 	constructor(message,previous,native) {
 		super(message);
 		this.message = message;
 		this.__previousException = previous;
 		this.__nativeException = native != null ? native : this;
-	}
-	toString() {
-		return this.get_message();
-	}
-	get_message() {
-		return this.message;
 	}
 	get_native() {
 		return this.__nativeException;
@@ -1232,12 +1284,6 @@ class haxe_Exception extends Error {
 	}
 }
 haxe_Exception.__name__ = true;
-class dropecho_util_NotImplementedException extends haxe_Exception {
-	constructor() {
-		super("Not Implemented.");
-	}
-}
-dropecho_util_NotImplementedException.__name__ = true;
 class haxe_ValueException extends haxe_Exception {
 	constructor(value,previous,native) {
 		super(String(value),previous,native);
