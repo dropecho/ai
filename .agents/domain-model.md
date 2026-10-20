@@ -132,7 +132,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 - **Condition name:** a word for something true about the world, such as `has_weapon`.
   Owner: `String` in `Action.Preconditions` / `Postconditions` and `State.Preconditions`.
 - **World state:** the set of Condition names true at one point in a plan. Planning starts
-  from the empty world state. Owner: implicit in `Planner`, as a sorted comma-joined string.
+  from the empty world state. Owner: the value of each node in `Planner`'s graph
+  (`Array<String>`); the node's label is the sorted comma-joined key from `_stateKey`.
 - **Action:** something an agent can do, with a Cost, the Condition names it needs
   (preconditions), the Condition names it makes true (postconditions), and an update
   function run each tick while it is the current Action. Owner: `goap.Action`;

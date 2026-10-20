@@ -17,20 +17,20 @@ class Planner {
 	}
 
 	public function generatePlan():Null<Plan> {
-		var graph = new Graph<String, Action>();
+		var graph = new Graph<Array<String>, Action>();
 
 		var startKey = "";
-		graph.createNode(startKey, startKey);
+		graph.createNode([], startKey);
 
 		// BFS to expand the reachable state space
-		var frontier = new Queue<IGraphNode<String, Action>>();
-		var goalNodes = new Array<IGraphNode<String, Action>>();
+		var frontier = new Queue<IGraphNode<Array<String>, Action>>();
+		var goalNodes = new Array<IGraphNode<Array<String>, Action>>();
 
 		frontier.enqueue(graph.nodes.get(startKey));
 
 		while (frontier.length > 0) {
 			var current = frontier.dequeue();
-			var conditions = _parseState(current.label);
+			var conditions = current.value;
 
 			if (_satisfiesGoal(conditions)) {
 				goalNodes.push(current);
@@ -42,7 +42,7 @@ class Planner {
 					var nextKey = _stateKey(nextConditions);
 
 					if (!graph.nodes.exists(nextKey)) {
-						graph.createNode(nextKey, nextKey);
+						graph.createNode(nextConditions, nextKey);
 						frontier.enqueue(graph.nodes.get(nextKey));
 					}
 
@@ -65,7 +65,7 @@ class Planner {
 		});
 
 		// Pick the goal node with the lowest Dijkstra cost
-		var bestGoal:IGraphNode<String, Action> = null;
+		var bestGoal:IGraphNode<Array<String>, Action> = null;
 		var bestDist = Math.POSITIVE_INFINITY;
 		for (gn in goalNodes) {
 			var d:Float = result.distances[gn];
@@ -98,10 +98,6 @@ class Planner {
 		var sorted = conditions.copy();
 		sorted.sort(Reflect.compare);
 		return sorted.join(",");
-	}
-
-	private function _parseState(key:String):Array<String> {
-		return key == "" ? [] : key.split(",");
 	}
 
 	private function _satisfiesGoal(conditions:Array<String>):Bool {
