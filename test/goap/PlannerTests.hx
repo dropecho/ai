@@ -45,6 +45,15 @@ class PlannerTests extends Test {
 		Assert.equals(_plan._actions.peek(), _action2);
 	}
 
+	public function test_when_given_two_equal_cost_actions_plan_should_contain_the_first_given() {
+		var first = new Action("first", _ -> {}, 1, [], ["test_condition"]);
+		var second = new Action("second", _ -> {}, 1, [], ["test_condition"]);
+		_planner = new Planner(_goal, [first, second]);
+		_plan = _planner.generatePlan();
+
+		Assert.equals(first, _plan._actions.peek());
+	}
+
 	public function test_when_given_chained_actions_plan_should_contain_both_in_order() {
 		var actionA = new Action("get_weapon", deltaTime -> {}, 1, ["found_weapon"], ["has_weapon"]);
 		var actionB = new Action("find_weapon", deltaTime -> {}, 1, [], ["found_weapon"]);
