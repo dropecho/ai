@@ -3,19 +3,34 @@ package dropecho.ai.fsm;
 import dropecho.interop.AbstractFunc.Func_0;
 import dropecho.interop.AbstractMap;
 
+/** A game-defined yes/no question; when it returns true its Transition is taken. It should only read state. */
 typedef Condition = Func_0<Bool>;
 
+/** A move to a target State, taken when its Condition is true. */
 @:nativeGen
 class Transition {
+	/** The State this Transition moves to. */
 	public var to(default, null):IState;
+
+	/** The Condition that, when true, takes this Transition. */
 	public var condition(default, null):Condition;
 
+	/**
+	 * Creates a Transition to `to`, taken when `condition` is true.
+	 *
+	 * @param to - The target State.
+	 * @param condition - The Condition that takes the Transition.
+	 */
 	public function new(to:IState, condition:Condition) {
 		this.to = to;
 		this.condition = condition;
 	}
 }
 
+/**
+ * A state machine: holds one current State and changes State when a Transition's Condition becomes true.
+ * Call `changeToState` to set the first State before calling `tick`.
+ */
 @:expose("fsm.FSM")
 @:nativeGen
 class FSM {
@@ -25,11 +40,13 @@ class FSM {
 	/* Transitions from any state to another */
 	var _anyTransitions = new Array<Transition>();
 
+	/** Creates a state machine with no State and no Transitions. */
 	public function new() {}
 
 	/**
-	 * Updates the current state, and gets any transitions that match.
-	 * Given it has a transition, it invokes next.onEnter and current.onExit
+	 * Ticks the current State, then takes the first Transition whose Condition is true.
+	 * Any-transitions are checked before the current State's own Transitions.
+	 * Throws if no State has been set with `changeToState`.
 	 */
 	public function tick():Void {
 		if (_currentState == null) {
@@ -43,12 +60,20 @@ class FSM {
 		}
 	}
 
+	/**
+	 * Gets the State the machine is in.
+	 *
+	 * @return The current State, or null before the first `changeToState`.
+	 */
 	public function getCurrentState():IState {
 		return _currentState;
 	}
 
 	/**
-	 * @param state - The state to change to.
+	 * Moves to `state`: calls the current State's `onExit` (if any), then `state.onEnter`.
+	 * Runs even if `state` is already current.
+	 *
+	 * @param state - The State to change to.
 	 */
 	public function changeToState(state:IState):Void {
 		_currentState?.onExit();
@@ -57,8 +82,12 @@ class FSM {
 	}
 
 	/**
-	 * Add a transition to the FSM.
-	 * This condition, when true, changes the FSM from the fromState, to the toState.
+	 * Adds a Transition from `fromState` to `toState`, taken when `condition` is true.
+	 * Transitions are keyed by State name and checked in the order they were added.
+	 *
+	 * @param fromState - The State the Transition leaves from.
+	 * @param toState - The State the Transition moves to.
+	 * @param condition - The Condition that takes the Transition.
 	 */
 	public function addTransition(fromState:IState, toState:IState, condition:Condition):Void {
 		var t = new Transition(toState, condition);
@@ -76,8 +105,11 @@ class FSM {
 	}
 
 	/**
-	 * Add a transition to the FSM.
-	 * This condition, when true, changes the FSM from ANY state to the toState.
+	 * Adds an Any-transition to `to`, taken from whatever State is current when `condition` is true.
+	 * Any-transitions are checked before the current State's own Transitions, in the order added.
+	 *
+	 * @param to - The State the Transition moves to.
+	 * @param condition - The Condition that takes the Transition.
 	 */
 	public function addAnyTransition(to:IState, condition:Condition):Void {
 		_anyTransitions.push(new Transition(to, condition));
@@ -106,6 +138,13 @@ class FSM {
 		return null;
 	}
 
+	/**
+	 * Draws the State graph as Graphviz DOT, marking the current State and the Transition about to be taken with `class="active"`.
+	 * It calls every Condition up to the first true one to find that Transition.
+	 * Only States with their own Transitions appear as nodes; Any-transitions start from a node named `any`.
+	 *
+	 * @return The DOT source.
+	 */
 	public function toDot():String {
 		var nodeOutput = "";
 		var edgeOutput = "";
