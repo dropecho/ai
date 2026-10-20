@@ -79,4 +79,22 @@ class PlanTests extends Test {
 		Assert.equals(0, _plan.length);
 		Assert.isTrue(_plan.isCompleted());
 	}
+
+	public function test_current_action_is_the_front_action() {
+		var action2 = new Action("second", _ -> {});
+		_plan = new Plan([_action1, action2]);
+		Assert.equals(_action1, _plan.currentAction);
+	}
+
+	public function test_current_action_is_null_when_completed() {
+		_plan = new Plan();
+		Assert.isNull(_plan.currentAction);
+	}
+
+	public function test_iterating_a_plan_gives_actions_in_order() {
+		var action2 = new Action("second", _ -> {});
+		_plan = new Plan([_action1, action2]);
+		var actions = [for (action in _plan) action];
+		Assert.same([_action1, action2], actions);
+	}
 }
