@@ -90,18 +90,12 @@ class FSM {
 	 * @param condition - The Condition that takes the Transition.
 	 */
 	public function addTransition(fromState:IState, toState:IState, condition:Condition):Void {
-		var t = new Transition(toState, condition);
-
-		var transitions:Array<Transition> = null;
-
-		if (_transitions.exists(fromState)) {
-			transitions = _transitions.get(fromState);
-		} else {
-			transitions = new Array<Transition>();
+		var transitions = _transitions.get(fromState);
+		if (transitions == null) {
+			transitions = [];
 			_transitions.set(fromState, transitions);
 		}
-
-		transitions.push(t);
+		transitions.push(new Transition(toState, condition));
 	}
 
 	/**
