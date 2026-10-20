@@ -9,9 +9,10 @@ class SequenceNode extends CompositeNode {
 	 * Creates a Sequence.
 	 *
 	 * @param children - The children, run in this order.
+	 * @param reactive - Start from the first child every tick, so earlier children are re-checked while a later one is running; defaults to false.
 	 */
-	public function new(children:Array<Node>) {
-		super(children);
+	public function new(children:Array<Node>, reactive:Bool = false) {
+		super(children, reactive);
 	}
 
 	/**

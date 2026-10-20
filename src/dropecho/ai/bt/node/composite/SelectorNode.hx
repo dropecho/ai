@@ -9,9 +9,10 @@ class SelectorNode extends CompositeNode {
 	 * Creates a Selector.
 	 *
 	 * @param children - The children, tried in this order.
+	 * @param reactive - Start from the first child every tick, so earlier children are re-checked while a later one is running; defaults to false.
 	 */
-	public function new(children:Array<Node>) {
-		super(children);
+	public function new(children:Array<Node>, reactive:Bool = false) {
+		super(children, reactive);
 	}
 
 	/**
