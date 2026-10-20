@@ -70,7 +70,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 | A behavior tree has a root | `BehaviorTree.new` throws |
 | A state machine ticks only once it has a State | `FSM.tick` throws |
 | A composite returns to its first child whenever it returns SUCCESS or FAILURE | `SelectorNode.execute`, `SequenceNode.execute` |
-| The Planner never changes the caller's Action list | `Planner.new` copies it |
+| The Planner never changes the caller's Action list | `Planner` only reads it |
+| Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
 | A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from an empty world state | `Planner.generatePlan` (Dijkstra over every reachable world state) |
 | A Plan runs its Actions in the order the Planner chose | `Plan.new` enqueues one at a time |
 

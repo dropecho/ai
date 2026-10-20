@@ -13,9 +13,7 @@ class Planner {
 
 	public function new(goal:State, availableActions:AbstractArray<Action>) {
 		_goal = goal;
-		// Copy so we never mutate the caller's array
-		_availableActions = cast [for (a in availableActions) a];
-		_availableActions.sort((a:Action, b:Action) -> Reflect.compare(a.Cost, b.Cost));
+		_availableActions = availableActions;
 	}
 
 	public function generatePlan():Null<Plan> {
