@@ -17,12 +17,23 @@ class BehaviorTreeTests extends Test {
 	}
 
 	public function test_when_execute_is_called_on_the_tree_it_should_execute_the_root_node() {
-		this.tree.execute();
+		this.tree.execute(0);
 
 		Assert.equals(1, testNode.executed);
 	}
 
 	public function test_tree_should_init_root_node_with_context() {
 		Assert.notNull(testNode.context);
+	}
+
+	public function test_new_should_throw_a_message_naming_the_fix_when_root_is_null() {
+		var message = "";
+		try {
+			new BehaviorTree(null);
+		} catch (e:String) {
+			message = e;
+		}
+
+		Assert.stringContains("new BehaviorTree(new SequenceNode(", message);
 	}
 }

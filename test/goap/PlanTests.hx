@@ -12,37 +12,168 @@ class PlanTests extends Test {
 
 	public function setup() {
 		_actionDone = false;
-		_action1 = new Action("test_action", deltaTime -> _actionDone = true);
+		_action1 = new Action("test_action", deltaTime -> _actionDone = true, 0, [], [], null, () -> _actionDone);
+	}
 
-		_plan = new Plan();
+	function unfinished(name:String):Action {
+		return new Action(name, _ -> {}, 0, [], [], null, () -> false);
 	}
 
 	public function test_when_there_are_no_actions_in_a_plan_done_should_always_return_true() {
-		Assert.isTrue(_plan.done());
+		_plan = new Plan();
+		_plan.update();
+		Assert.isTrue(_plan.isCompleted());
 	}
 
 	public function test_when_given_an_action_with_preconditions_unmatched_done_should_return_false() {
-		_action1.PostMatcher = () -> false;
-		_plan.Actions.unshift(_action1);
-		Assert.isFalse(_plan.done());
+		_action1.doneCheck = () -> false;
+		_plan = new Plan([_action1]);
+		Assert.isFalse(_plan.isCompleted());
 	}
 
 	public function test_when_given_an_action_with_preconditions_matched_done_should_return_true() {
-		_action1.PostMatcher = () -> true;
-		_plan.Actions.unshift(_action1);
-		Assert.isTrue(_plan.done());
+		_action1.doneCheck = () -> true;
+		_plan = new Plan([_action1]);
+		Assert.isTrue(_plan.isCompleted());
 	}
 
 	public function test_when_checking_done_on_an_updated_action() {
-		_action1.PostMatcher = () -> _actionDone;
-		_plan.Actions.unshift(_action1);
-		Assert.isFalse(_plan.done());
+		_action1.doneCheck = () -> _actionDone;
+		_plan = new Plan([_action1]);
+		Assert.isFalse(_plan.isCompleted());
 	}
 
 	public function test_when_calling_update_it_should_call_update_on_the_current_action() {
-		_action1.PostMatcher = () -> _actionDone;
-		_plan.Actions.unshift(_action1);
+		_action1.doneCheck = () -> _actionDone;
+		_plan = new Plan([_action1]);
 		_plan.update(0);
-		Assert.isTrue(_plan.done());
+		Assert.isTrue(_plan.isCompleted());
+	}
+
+	public function test_when_first_action_completes_second_gets_ticked() {
+		var action2Done = false;
+		var action2 = new Action("second", _ -> action2Done = true, 0, [], [], null, () -> action2Done);
+
+		_action1.doneCheck = () -> _actionDone;
+		_plan = new Plan([_action1, action2]);
+
+		// First update: ticks action1 (_actionDone = true) → action1 completes → action2 is now current
+		_plan.update(0);
+		Assert.isTrue(_actionDone);
+		Assert.equals(1, _plan.length());
+
+		// Second update: ticks action2 (action2Done = true) → action2 completes
+		_plan.update(0);
+		Assert.isTrue(action2Done);
+		Assert.isTrue(_plan.isCompleted());
+	}
+
+	public function test_length_decrements_as_actions_complete() {
+		var action2 = new Action("second", _ -> {}, 0, [], [], null, () -> true);
+
+		_action1.doneCheck = () -> _actionDone;
+		_plan = new Plan([_action1, action2]);
+
+		Assert.equals(2, _plan.length());
+
+		// After update: action1 ticked (_actionDone=true) → both actions dequeued
+		_plan.update(0);
+		Assert.equals(0, _plan.length());
+		Assert.isTrue(_plan.isCompleted());
+	}
+
+	public function test_current_action_is_the_front_action() {
+		var action2 = unfinished("second");
+		_plan = new Plan([_action1, action2]);
+		Assert.equals(_action1, _plan.currentAction());
+	}
+
+	public function test_current_action_is_null_when_completed() {
+		_plan = new Plan();
+		Assert.isNull(_plan.currentAction());
+	}
+
+	public function test_iterating_a_plan_gives_actions_in_order() {
+		var action2 = unfinished("second");
+		_plan = new Plan([_action1, action2]);
+		var actions = [for (action in _plan) action];
+		Assert.same([_action1, action2], actions);
+	}
+
+	public function test_remaining_actions_gives_actions_in_order() {
+		var action2 = unfinished("second");
+		_plan = new Plan([_action1, action2]);
+		Assert.same([_action1, action2], _plan.remainingActions());
+	}
+
+	public function test_changing_remaining_actions_does_not_change_the_plan() {
+		_plan = new Plan([_action1]);
+		_plan.remainingActions().pop();
+		Assert.equals(1, _plan.length());
+	}
+
+	public function test_an_action_without_a_done_check_is_done_when_its_postconditions_are_in_the_world_state() {
+		var worldState = [];
+		var move = new Action("move", _ -> {}, 0, [], ["at_target"]);
+		_plan = new Plan([move], () -> worldState);
+		Assert.isFalse(_plan.isCompleted());
+
+		worldState = ["at_target"];
+		Assert.isTrue(_plan.isCompleted());
+	}
+
+	public function test_an_action_without_a_done_check_needs_all_its_postconditions() {
+		var move = new Action("move", _ -> {}, 0, [], ["at_target", "facing_target"]);
+		_plan = new Plan([move], () -> ["at_target"]);
+		Assert.isFalse(_plan.isCompleted());
+	}
+
+	public function test_an_action_with_its_own_done_check_ignores_the_world_state() {
+		var move = new Action("move", _ -> {}, 0, [], ["at_target"], null, () -> false);
+		_plan = new Plan([move], () -> ["at_target"]);
+		Assert.isFalse(_plan.isCompleted());
+	}
+
+	public function test_an_action_without_a_done_check_and_no_world_state_provider_throws() {
+		var move = new Action("move", _ -> {}, 0, [], ["at_target"]);
+		Assert.raises(() -> new Plan([move]));
+	}
+
+	public function test_the_throw_names_the_action_and_both_fixes() {
+		var message = "";
+		try {
+			new Plan([new Action("move", _ -> {}, 0, [], ["at_target"])]);
+		} catch (e:String) {
+			message = e;
+		}
+		Assert.stringContains('"move"', message);
+		Assert.stringContains("world state provider", message);
+		Assert.stringContains("done check", message);
+	}
+
+	public function test_the_world_state_provider_is_asked_once_per_check() {
+		var asked = 0;
+		var first = new Action("first", _ -> {}, 0, [], ["a"]);
+		var second = new Action("second", _ -> {}, 0, [], ["b"]);
+		_plan = new Plan([first, second], () -> {
+			asked++;
+			return ["a", "b"];
+		});
+		Assert.isTrue(_plan.isCompleted());
+		Assert.equals(1, asked);
+	}
+
+	public function test_update_skips_an_action_that_is_already_done() {
+		var firstTicks = 0;
+		var secondTicks = 0;
+		var first = new Action("first", _ -> firstTicks++, 0, [], [], null, () -> true);
+		var second = new Action("second", _ -> secondTicks++, 0, [], [], null, () -> false);
+		_plan = new Plan([first, second]);
+
+		_plan.update(0);
+
+		Assert.equals(0, firstTicks);
+		Assert.equals(1, secondTicks);
+		Assert.equals(second, _plan.currentAction());
 	}
 }

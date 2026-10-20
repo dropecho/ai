@@ -1,7 +1,123 @@
-<html>
-<head>
-	<script src="dropecho.ai.js"></script>
-	<script src="behavior-tree.js"></script>
-</head>
-<body></body>
-<html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Behavior tree · dropecho.ai</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="Site">
+        <a class="brand" href="index.html">dropecho.ai</a>
+        <a href="behavior-tree.html" aria-current="page">Behavior tree</a>
+        <a href="fsm.html">State machine</a>
+        <a href="goap.html">Goal planner</a>
+        <a href="utility.html">Utility</a>
+        <a href="api/index.html">API</a>
+        <a href="https://github.com/dropecho/ai">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Behavior tree</h1>
+      <p class="lede">
+        The root is a Selector of two Sequences and a fallback Task. Each Task node runs a Task
+        registered by name in the Task registry, and every Task reads and writes the Blackboard.
+      </p>
+      <p>
+        Watch the highlighted nodes: in one tick a Composite <strong>runs on to the next
+        child</strong> until a child decides the result (SUCCESS for a Selector, FAILURE for a
+        Sequence), the last child finishes, or a child answers RUNNING. Every node that ran this
+        tick is highlighted. A RUNNING child keeps the Composite's cursor (▸) and is asked again
+        next tick, without re-running the children before it.
+      </p>
+      <p>
+        Tick <strong>Reactive root</strong> to rebuild the tree with a Reactive Selector at the
+        root. It starts from its first child every tick, so getting hungry while sleeping
+        interrupts the sleep: <code>is_hungry</code> is checked again each tick and eating takes
+        over. The abandoned branch is <strong>halted</strong>: <code>sleep when tired</code> and
+        its running <code>sleep</code> are told they will not be ticked again, and the inner
+        Sequence's ▸ goes back to its first child, so the agent checks <code>is_tired</code>
+        afresh once it has eaten.
+      </p>
+      <p>
+        The page sees all this through a <strong>tracer</strong> on the tree: parents report every
+        child they run and every child they halt, and a <code>StatusRecorder</code> keeps the last
+        Status of each node for the view and for <code>tree.toText()</code>.
+      </p>
+
+      <div class="controls" role="group" aria-label="Tree controls">
+        <button id="step" class="primary">Step</button>
+        <button id="play" aria-pressed="false">Play</button>
+        <button id="reset">Reset</button>
+        <label><input id="reactive" type="checkbox" /> Reactive root</label>
+        <span id="tick-status" aria-live="polite"></span>
+      </div>
+
+      <div class="grid">
+        <section class="panel" aria-labelledby="tree-heading">
+          <h2 id="tree-heading" class="h3">Tree</h2>
+          <p class="muted">Highlighted: every node that ran this tick, with its Status; "halted": abandoned this tick while RUNNING. ▸: the child a Composite resumes next tick.</p>
+          <ul id="tree" class="tree"></ul>
+          <h3 class="h3">tree.toText(recorder)</h3>
+          <pre id="dump" aria-label="Text dump of the tree"></pre>
+        </section>
+
+        <section class="panel" aria-labelledby="bb-heading">
+          <h2 id="bb-heading" class="h3">Blackboard</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th scope="col">Fact</th><th scope="col">Value</th></tr>
+              </thead>
+              <tbody id="facts"></tbody>
+            </table>
+          </div>
+          <p class="muted">
+            <code>is_hungry</code>: hunger ≥ 3. <code>is_tired</code>: energy ≤ 1.
+            <code>eat</code> and <code>sleep</code> answer RUNNING until done; sleeping makes the
+            agent hungrier.
+          </p>
+        </section>
+
+        <section class="panel" aria-labelledby="log-heading">
+          <h2 id="log-heading" class="h3">Ticks</h2>
+          <ol id="log" class="log"></ol>
+        </section>
+      </div>
+
+      <h2>The code</h2>
+      <pre><code>TaskBank.register("is_hungry", (bb) =&gt;
+  bb.get("hunger") &gt;= 3 ? bt.NODE_STATUS.SUCCESS : bt.NODE_STATUS.FAILURE);
+// ... eat, is_tired, sleep, wander
+
+const rootSelector = new bt.SelectorNode([
+  new bt.SequenceNode([new bt.TaskNode("is_hungry"), new bt.TaskNode("eat")]),
+  new bt.SequenceNode([new bt.TaskNode("is_tired"), new bt.TaskNode("sleep")]),
+  new bt.TaskNode("wander"),
+]);
+const tree = new bt.BehaviorTree(rootSelector);
+tree.init(blackboard);
+tree.execute(deltaTime); // once per tick
+
+// Watch it run: any object with onTick and onHalt, or the built-in StatusRecorder.
+const recorder = new bt.StatusRecorder();
+tree.setTracer(recorder);
+tree.setLabel(rootSelector, "root"); // Task nodes are labelled with their Task name
+recorder.clear();
+tree.execute(deltaTime);
+console.log(tree.toText(recorder)); // indented tree, each node's Status this tick
+tree.toDot(recorder);               // the same as Graphviz DOT
+
+// Reactive root: re-checks "eat when hungry" every tick, even while sleeping.
+new bt.SelectorNode([/* same children */], true); // reactive: true</code></pre>
+      <p><a href="https://github.com/dropecho/ai/blob/main/docs/behavior-tree.js">Full source of this demo</a></p>
+    </main>
+
+    <script src="dropecho.ai.js"></script>
+    <script src="common.js"></script>
+    <script src="behavior-tree.js"></script>
+  </body>
+</html>

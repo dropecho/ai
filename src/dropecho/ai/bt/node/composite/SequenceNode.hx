@@ -1,29 +1,27 @@
 package dropecho.ai.bt.node.composite;
 
-using Lambda;
-
+/**
+ * A Sequence: fails at the first child that fails, and succeeds if every child succeeds.
+ */
 @:expose("bt.SequenceNode")
 class SequenceNode extends CompositeNode {
-	public function new(children:Array<Node>) {
-		super(children);
+	/**
+	 * Creates a Sequence.
+	 *
+	 * @param children - The children, run in this order.
+	 * @param reactive - Start from the first child every tick, so earlier children are re-checked while a later one is running; defaults to false.
+	 */
+	public function new(children:Array<Node>, reactive:Bool = false) {
+		super(children, reactive);
 	}
 
-	public override function execute():NODE_STATUS {
-		var childStatus = this.childIterator.current().execute();
-
-		if (childStatus == NODE_STATUS.RUNNING) {
-			return NODE_STATUS.RUNNING;
-		}
-
-		var childFailed = (childStatus == NODE_STATUS.FAILURE);
-		var allChildrenSucceeded = this.childIterator.hasNext() == false && childStatus == NODE_STATUS.SUCCESS;
-
-		if (childFailed || allChildrenSucceeded) {
-			this.childIterator.reset();
-			return childStatus;
-		}
-
-		this.childIterator.next();
-		return NODE_STATUS.RUNNING;
+	/**
+	 * Runs children from the current one in the same tick: a succeeded child moves on to the next child, and a running child is resumed next tick.
+	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
+	 * @return FAILURE when a child fails, SUCCESS when every child from the current one succeeds (both return to the first child), RUNNING when a child is running.
+	 */
+	public function execute(deltaTime:Float):NODE_STATUS {
+		return runChildren(NODE_STATUS.FAILURE, deltaTime);
 	}
 }

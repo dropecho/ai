@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Goal planner · dropecho.ai</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="Site">
+        <a class="brand" href="index.html">dropecho.ai</a>
+        <a href="behavior-tree.html">Behavior tree</a>
+        <a href="fsm.html">State machine</a>
+        <a href="goap.html" aria-current="page">Goal planner</a>
+        <a href="utility.html">Utility</a>
+        <a href="api/index.html">API</a>
+        <a href="https://github.com/dropecho/ai">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Goal planner</h1>
+      <p class="lede">
+        The Planner asks the game which Condition names are true now (the World state), searches
+        every World state reachable from there using each Action's preconditions and
+        postconditions, and returns the cheapest Plan that makes the Goal true, or
+        <code>null</code> when there is none.
+      </p>
+      <p>
+        By default, <code>buy_weapon</code> reaches the Goal in one step for Cost 10, but
+        <code>find_weapon</code> then <code>get_weapon</code> costs 2 in total, so the Planner picks
+        the two-step Plan. Change the Costs, switch Actions off, or mark Conditions as already true
+        and watch the Plan change.
+      </p>
+
+      <section class="panel" aria-labelledby="actions-heading">
+        <h2 id="actions-heading" class="h3">Actions</h2>
+        <div class="controls">
+          <label for="goal">Goal</label>
+          <select id="goal">
+            <option value="has_weapon">has_weapon</option>
+            <option value="found_weapon">found_weapon</option>
+            <option value="has_weapon,found_wood">has_weapon and found_wood</option>
+          </select>
+        </div>
+        <div id="start-conditions" class="controls" role="group" aria-label="Conditions true at the start"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Use</th>
+                <th scope="col">Action</th>
+                <th scope="col">Cost</th>
+                <th scope="col">Needs</th>
+                <th scope="col">Makes true</th>
+                <th scope="col">Ticks to finish</th>
+              </tr>
+            </thead>
+            <tbody id="actions"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="panel" aria-labelledby="plan-heading">
+          <h2 id="plan-heading" class="h3">Plan</h2>
+          <div id="plan" aria-live="polite"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="run-heading">
+          <h2 id="run-heading" class="h3">Run the Plan</h2>
+          <p class="muted">
+            Each tick, <code>plan.update(dt)</code> updates the front Action, then drops every front
+            Action that is done. These Actions have no done check of their own, so each is done once
+            its postconditions are in the World state; here an Action makes them true after its
+            number of ticks.
+          </p>
+          <div class="controls" role="group" aria-label="Plan controls">
+            <button id="step" class="primary">Step</button>
+            <button id="play" aria-pressed="false">Play</button>
+            <button id="restart">Restart</button>
+          </div>
+          <p id="run-status" aria-live="polite"></p>
+          <p id="world" class="muted"></p>
+          <ol id="run" class="tree"></ol>
+        </section>
+      </div>
+
+      <h2>The code</h2>
+      <pre><code>const world = new Set(); // the Condition names true in the game
+const worldState = () =&gt; [...world];
+
+const findWeapon = new goap.Action("find_weapon", (dt) =&gt; world.add("found_weapon"), 1,
+  [], ["found_weapon"]);
+const getWeapon = new goap.Action("get_weapon", (dt) =&gt; world.add("has_weapon"), 1,
+  ["found_weapon"], ["has_weapon"]);
+const buyWeapon = new goap.Action("buy_weapon", (dt) =&gt; world.add("has_weapon"), 10,
+  [], ["has_weapon"]);
+
+const plan = new goap.Planner(new goap.Goal(["has_weapon"]), [buyWeapon, findWeapon, getWeapon], worldState)
+  .generatePlan(); // find_weapon, get_weapon; or null when no Plan reaches the Goal
+
+plan.currentAction();    // the Action running now
+plan.remainingActions(); // an Array of the Actions left
+const done = plan.update(dt); // once per tick; true when every Action is done</code></pre>
+      <p>
+        An Action without a done check of its own is done once all its postconditions are in the
+        World state, so the Plan needs a world state provider (the Planner passes its own on). To
+        decide differently, pass a done check, a <code>() =&gt; boolean</code>, as the last
+        <code>goap.Action</code> argument. A Plan that holds an Action with neither throws when it
+        is created.
+      </p>
+      <p><a href="https://github.com/dropecho/ai/blob/main/docs/goap.js">Full source of this demo</a></p>
+    </main>
+
+    <script src="dropecho.ai.js"></script>
+    <script src="common.js"></script>
+    <script src="goap.js"></script>
+  </body>
+</html>

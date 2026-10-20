@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dropecho.ai</title>
+    <meta
+      name="description"
+      content="A small game AI toolkit for Haxe, JS and C#: behavior trees, a state machine, a goal planner and utility motives."
+    />
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="Site">
+        <a class="brand" href="index.html" aria-current="page">dropecho.ai</a>
+        <a href="behavior-tree.html">Behavior tree</a>
+        <a href="fsm.html">State machine</a>
+        <a href="goap.html">Goal planner</a>
+        <a href="utility.html">Utility</a>
+        <a href="api/index.html">API</a>
+        <a href="https://github.com/dropecho/ai">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>dropecho.ai</h1>
+      <p class="lede">
+        A small game AI toolkit for Haxe, JS and C#: four independent ways to decide what an agent
+        does next (behavior tree, state machine, goal planner and utility motives), sharing one
+        Blackboard of facts.
+      </p>
+
+      <h2>Install</h2>
+      <p>Haxe, with lix or haxelib:</p>
+      <pre><code>lix install haxelib:dropecho.ai
+haxelib install dropecho.ai</code></pre>
+      <p>JS / TypeScript:</p>
+      <pre><code>npm install @dropecho/ai</code></pre>
+
+      <h2>Demos</h2>
+      <p>Each demo runs the library in your browser, built from the same scenarios as its tests.</p>
+      <ul class="cards">
+        <li>
+          <a class="card" href="behavior-tree.html">
+            <h3>Behavior tree</h3>
+            <p>A Selector of Sequences over Tasks. Step it and watch each Composite run on through its children in one tick.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="fsm.html">
+            <h3>State machine</h3>
+            <p>Wander, eat, sleep and flee States with Conditions, an any-transition and a live State graph.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="goap.html">
+            <h3>Goal planner</h3>
+            <p>Toggle Actions and edit Costs, see the cheapest Plan the Planner finds, then run it.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="utility.html">
+            <h3>Utility</h3>
+            <p>Motives decay over time; the Utility agent picks the most important one, the lowest.</p>
+          </a>
+        </li>
+      </ul>
+
+      <h2>Reference</h2>
+      <ul>
+        <li><a href="api/index.html">API documentation</a>, generated from the source doc comments.</li>
+        <li><a href="https://github.com/dropecho/ai">Source on GitHub</a>, with a README of Haxe examples.</li>
+      </ul>
+    </main>
+
+    <footer class="site-footer">MIT licensed.</footer>
+  </body>
+</html>
