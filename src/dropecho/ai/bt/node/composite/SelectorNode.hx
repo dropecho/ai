@@ -20,22 +20,6 @@ class SelectorNode extends CompositeNode {
 	 * @return SUCCESS when a child succeeds, FAILURE when every child from the current one fails (both return to the first child), RUNNING when a child is running.
 	 */
 	public function execute():NODE_STATUS {
-		while (true) {
-			var childStatus = this.childIterator
-				.current()
-				.execute();
-
-			if (childStatus == NODE_STATUS.RUNNING) {
-				return NODE_STATUS.RUNNING;
-			}
-
-			var isLastChild = this.childIterator.hasNext() == false;
-			if (childStatus == NODE_STATUS.SUCCESS || isLastChild) {
-				this.childIterator.reset();
-				return childStatus;
-			}
-
-			this.childIterator.next();
-		}
+		return runChildren(NODE_STATUS.SUCCESS);
 	}
 }
