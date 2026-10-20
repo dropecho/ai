@@ -46,7 +46,7 @@ src/dropecho/ai/           # library source
   utility/                 # Motive, UtilityAgent
 src/dropecho/util/         # CurrentIterator, NotImplementedException
 test/                      # utest test suites (mirroring src structure)
-  ai/  bt/  fsm/  goap/  util/
+  ai/  bt/  fsm/  goap/  util/  utility/
 targets/                   # per-target HXML fragments
 docs/                      # compiled docs output
 .agents/                   # extended AI agent documentation

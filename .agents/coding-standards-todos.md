@@ -19,32 +19,33 @@ in code. Nothing here is implemented until approved. Terms are from
 | ID | Kind | What it does | Buys | Needs | Status |
 |---|---|---|---|---|---|
 | M1 | Model change | Call the GOAP `State` a Goal | Ends the clash with the state machine's State | — | open |
-| M2 | Model change | Make World state an explicit value in the Planner instead of a comma-joined string | The planner reads in its own terms | — | open |
+| M2 | Model change | Make World state an explicit value in the Planner instead of a comma-joined string | The planner reads in its own terms | — | done |
 | M3 | Model change | Make the child cursor part of Composites, with cursor names instead of iterator ones | `hasNext`/`next` stop pretending to be a Haxe Iterator | — | open |
-| R5 | Refactor [simplify] | Each planner graph node holds its World state's condition list, so the string is never split back apart | M2; removes `_parseState` | — | open |
-| R20 | Refactor [readability] | Split `generatePlan` into named steps (expand world states, find cheapest goal, collect actions), replacing its four step comments | M2; the 75-line method reads as four lines | R5 | open |
-| R6 | Refactor [reuse] | Merge `_satisfiesGoal` and `_preconditionsMet`, which are the same "has all these conditions" check | One check, one name | — | open |
-| R7 | Refactor [simplify] | Drop the constructor's sort-and-copy; the cheapest-edge check already keeps the cheapest Action | Removes a `cast` and a duplicate rule | T8 | open |
+| R5 | Refactor [simplify] | Each planner graph node holds its World state's condition list, so the string is never split back apart | M2; removes `_parseState` | — | done |
+| R20 | Refactor [readability] | Split `generatePlan` into named steps (expand world states, find cheapest goal, collect actions), replacing its four step comments | M2; the 75-line method reads as four lines | R5 | done |
+| R6 | Refactor [reuse] | Merge `_satisfiesGoal` and `_preconditionsMet`, which are the same "has all these conditions" check | One check, one name | — | done |
+| R7 | Refactor [simplify] | Drop the constructor's sort-and-copy; the cheapest-edge check already keeps the cheapest Action | Removes a `cast` and a duplicate rule | T8 | done |
 | A3 | API change | Move `CurrentIterator` into the composite package as a child cursor with `advance()` / `isOnLast()` | M3; a `for` loop over it today silently skips the last child | — | open |
 | A1 | API change | Rename GOAP `State` to `Goal` (breaking) | M1 | — | open |
 | R10 | Refactor [reuse] | Selector and Sequence are mirror images; share one "run current child, stop on X" step in Composite | One copy of the cursor rules | T6, B10 | open |
-| R11 | Refactor [pattern] | Make CompositeNode and DecoratorNode Haxe `abstract class`es so a missing `execute` is a compile error, not a runtime throw | Compiler enforces what convention does now | — | open |
-| R8 | Refactor [sweep] | P15: brace the 7 one-line `if`s, all in the Planner | Preference sweep | — | open |
-| R16 | Refactor [sweep] | P18: give the 10 untyped public functions explicit return types (`Null<Motive>` for the most important motive) | Preference sweep; signatures stop changing with bodies | — | open |
-| R17 | Refactor [sweep] | P4: doc-comment every public member (most have none) | Preference sweep; the docs target has content | — | open |
-| R19 | Refactor [sweep] | P1: name the 7 conditions that don't read as English | Preference sweep | R6, R20 | open |
-| R18 | Refactor [sweep] | P20: write the 2 negated logic checks as `== false` in a named value | Preference sweep | — | open |
+| R11 | Refactor [pattern] | Make CompositeNode and DecoratorNode Haxe `abstract class`es so a missing `execute` is a compile error, not a runtime throw | Compiler enforces what convention does now | — | done |
+| R8 | Refactor [sweep] | P15: brace the 7 one-line `if`s, all in the Planner | Preference sweep | — | done |
+| R16 | Refactor [sweep] | P18: give the 10 untyped public functions explicit return types (`Null<Motive>` for the most important motive) | Preference sweep; signatures stop changing with bodies | — | done |
+| R17 | Refactor [sweep] | P4: doc-comment every public member (most have none) | Preference sweep; the docs target has content | — | approved |
+| R19 | Refactor [sweep] | P1: name the 7 conditions that don't read as English | Preference sweep | R6, R20 | done |
+| R18 | Refactor [sweep] | P20: write the 2 negated logic checks as `== false` in a named value | Preference sweep | — | done |
 | T6 | Test [pin] | Pin "one child per tick" for Selector and Sequence | Protects R10 | — | open |
-| T8 | Test [pin] | Pin that among equal-cost Actions the first given wins | Protects R7 | — | open |
+| T8 | Test [pin] | Pin that among equal-cost Actions the first given wins | Protects R7 | — | done |
 | B10 | Bug (question) | Composites run one child per tick; most behavior trees run on to the next child in the same tick. Intended? | Decides R10's shape | — | open |
-| B11 | Bug | An unknown task name gives a Task node `null`, which fails later with "not a function"; throw at construction, listing registered names | P3; failure where the cause is | — | open |
+| B11 | Bug | An unknown task name gives a Task node `null`, which fails later with "not a function"; throw at construction, listing registered names | P3; failure where the cause is | — | done |
 | B12 | Bug (question) | State machine transitions are keyed by State name, so two States with one name (two instances of one class, as in the tests) share transitions silently | Removes a trap | — | open |
+| B17 | Bug (question) | An Action's default done check is always true, so a Plan drops every remaining Action after its first update; should the default be "not done", or should a done check be required? | Plans built with defaults run fully | — | open |
 | B16 | Bug (upstream) | Fix `Queue.enqueueMany` in dropecho.ds (adds to the front on JS), then remove the workaround in `Plan.new` | Removes a workaround | — | open |
-| A2 | API change | GOAP and Utility aren't exported in the CJS bundle, while dropecho.ds's Graph/GraphNode/Heap/Queue/Search now are, as top-level names | JS users can reach the planner | — | open |
-| A4 | API change | Replace the public `Plan._actions` with `currentAction` and `iterator()`; tests stop reaching into it (finishes R4) | Plan owns its queue | — | open |
-| D1 | Docs | `architecture.md` is stale (Int blackboard, stub LeafNode, backward-chaining planner) and repeats the concepts; point it at the domain model and keep only the flows | One description of the system | — | open |
-| D2 | Docs | AGENTS.md says the Blackboard holds Int facts; it holds Float | Accurate guide | — | open |
-| D4 | Docs | README describes another project (`dropecho.hx`, Travis) | A README for this library | — | open |
+| A2 | API change | GOAP and Utility aren't exported in the CJS bundle, while dropecho.ds's Graph/GraphNode/Heap/Queue/Search now are, as top-level names | JS users can reach the planner | — | done |
+| A4 | API change | Replace the public `Plan._actions` with `currentAction` and `iterator()`; tests stop reaching into it (finishes R4) | Plan owns its queue | — | partly done: accessors added, tests moved; making `_actions` private waits for the next major |
+| D1 | Docs | `architecture.md` is stale (Int blackboard, stub LeafNode, backward-chaining planner) and repeats the concepts; point it at the domain model and keep only the flows | One description of the system | — | done |
+| D2 | Docs | AGENTS.md says the Blackboard holds Int facts; it holds Float | Accurate guide | — | done |
+| D4 | Docs | README describes another project (`dropecho.hx`, Travis) | A README for this library | — | done |
 | A5 | API change · low value | GOAP naming: PascalCase fields and snake_case methods (`preconditions_satisfied`, `delta_time`) unlike the rest; conventions.md asks for the PascalCase fields | Consistency, only in a major | — | open |
 | A6 | API change · low value | `Action.new` takes `Float->Void` while the field is `Action_1<Float>` | Matches the interop convention | — | open |
 | A7 | API change · low value | Goal `Relevance` is stored but nothing uses it; remove it or use it | No dead field | — | open |
@@ -54,10 +55,10 @@ in code. Nothing here is implemented until approved. Terms are from
 | B14 | Bug (question) · low value | `Plan.update` ticks the front Action once even if its done check is already true | — | — | open |
 | B15 | Bug (question) · low value | `toDot()` asks every Condition to mark the active edge, so drawing runs game callbacks | — | — | open |
 | R12 | Refactor [readability] · low value | Shorten `FSM.addTransition`'s get-or-create | Shorter | — | open |
-| R13 | Refactor [readability] · low value | Remove unused imports and `using Lambda` | Less noise | — | open |
+| R13 | Refactor [readability] · low value | Remove unused imports and `using Lambda` | Less noise | — | done |
 | R14 | Refactor [readability] · low value | Build `toDot()` output from lists instead of string concatenation with stray indentation | Readable DOT | — | open |
-| T7 | Test [readability] · low value | Remove `trace(util)` and fix swapped `Assert.equals(expected, actual)` arguments | Clear failure messages | — | open |
-| T9 | Test [consistency] · low value | Move `test/UtilityTests.hx` to `test/utility/` like the others | P21 | — | open |
+| T7 | Test [readability] · low value | Remove `trace(util)` and fix swapped `Assert.equals(expected, actual)` arguments | Clear failure messages | — | done |
+| T9 | Test [consistency] · low value | Move `test/UtilityTests.hx` to `test/utility/` like the others | P21 | — | done |
 | B1–B8, R1–R4, T1–T5 | Earlier rounds | See "Done in earlier rounds" | — | — | done |
 
 ## Model changes
@@ -73,7 +74,7 @@ one concept. Implemented by: A1. Status: open.
 As-is: a world state is a sorted comma-joined string, split back into a list on every
 expansion. To-be: the graph node's value is the condition list; the string is only the
 node's label. Why it is simpler: the planner works on the concept, not its encoding.
-Implemented by: R5, R20. Status: open.
+Implemented by: R5, R20. Status: done.
 
 ### M3 — move: the child cursor belongs to Composites
 
@@ -134,7 +135,8 @@ FAILURE. Line delta about −15. Needs: T6, B10.
 
 **File:** `CompositeNode.hx`, `DecoratorNode.hx` `execute()` throws
 `NotImplementedException`. Target: `abstract class` with `abstract function execute()`.
-Neither is exported to JS.
+Neither is exported to JS. Done: Haxe requires subclasses of an abstract class to drop
+`override`, so a game's own Haxe subclass with `override function execute` stops compiling.
 
 ### R8 [sweep] — P15 across the Planner
 
@@ -214,6 +216,15 @@ with a `TaskBank.register(...)` example (P3).
 **File:** `dropecho.ds/src/dropecho/ds/Queue.hx` (other repo), JS branch of
 `enqueueMany` uses `List.push`. Fix there with a test, release, bump here, and remove the
 loop in `Plan.new`.
+
+### B17 — default done check is always true (question)
+
+**File:** `src/dropecho/ai/goap/Action.hx:15-16`, `Plan.hx` `PostMatcher` defaults to
+`() -> true`. `Plan.update` runs the front Action, then `isCompleted` drops every Action
+whose done check is true, so with defaults only the first Action ever runs. Found while
+writing the README example. Default to "not done", or require a done check?
+
+---
 
 ## API changes (need a decision)
 
