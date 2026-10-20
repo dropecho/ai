@@ -3,6 +3,7 @@ package dropecho.ai.goap;
 import dropecho.interop.AbstractArray;
 import dropecho.ds.Queue;
 
+@:expose("goap.Plan")
 class Plan {
 	public var _actions(default, null):Queue<Action> = new Queue<Action>();
 

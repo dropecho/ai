@@ -1,5 +1,6 @@
 package dropecho.ai.goap;
 
+@:expose("goap.State")
 class State {
 	public var Relevance(default, null):Int;
 	public var Preconditions(default, null):Array<String>;

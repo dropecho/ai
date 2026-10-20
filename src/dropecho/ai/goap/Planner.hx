@@ -10,6 +10,7 @@ import dropecho.interop.AbstractMap;
 private typedef WorldStateGraph = Graph<Array<String>, Action>;
 private typedef WorldStateNode = IGraphNode<Array<String>, Action>;
 
+@:expose("goap.Planner")
 class Planner {
 	private var _availableActions:AbstractArray<Action>;
 	private var _goal:State;

@@ -19,9 +19,9 @@ JS / TypeScript:
 npm install @dropecho/ai
 ```
 
-The JS bundle exposes the behavior tree classes (`bt.*`), `fsm.FSM`, `Blackboard` and
-`TaskBank`. The GOAP (`goap.*`) and utility (`utility.*`) classes are not exported to JS
-yet, so the examples below are in Haxe.
+The JS bundle exposes `Blackboard`, `TaskBank`, the behavior tree classes (`bt.*`),
+`fsm.FSM`, the GOAP classes (`goap.*`) and the utility classes (`utility.*`). The examples
+below are in Haxe.
 
 ## Blackboard
 

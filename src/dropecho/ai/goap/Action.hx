@@ -3,6 +3,7 @@ package dropecho.ai.goap;
 import dropecho.interop.AbstractFunc.Action_1;
 import dropecho.interop.AbstractFunc.Func_0;
 
+@:expose("goap.Action")
 class Action {
 	public var ActionType:String;
 	public var Cost:Float;

@@ -4,6 +4,7 @@ import haxe.Json;
 
 using Lambda;
 
+@:expose("utility.Motive")
 class Motive {
 	public var name:String;
 	public var value:Float;
@@ -14,6 +15,7 @@ class Motive {
 	}
 }
 
+@:expose("utility.UtilityAgent")
 class UtilityAgent {
 	public var motives:Array<Motive> = new Array<Motive>();
 
