@@ -298,4 +298,16 @@ class FSMTests extends Test {
 		Assert.same(["idle -> idle"], graph.edges());
 		Assert.same(["idle"], graph.nodesWithClass("current"));
 	}
+
+	public function test_toDot_keeps_node_ids_when_the_current_state_changes() {
+		var flee = new CountingState("flee");
+		_fsm.addAnyTransition(flee, () -> false);
+		var isEdgeLine = (line:String) -> line.indexOf("->") >= 0;
+
+		var edgesBefore = _fsm.toDot().split("\n").filter(isEdgeLine);
+		_fsm.changeToState(flee);
+		var edgesAfter = _fsm.toDot().split("\n").filter(isEdgeLine);
+
+		Assert.same(edgesBefore, edgesAfter);
+	}
 }

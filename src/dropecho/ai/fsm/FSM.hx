@@ -160,12 +160,13 @@ class FSM {
 			}
 		}
 
-		if (_currentState != null) {
-			nodeId(_currentState);
-		}
 		addEdges("any", _anyTransitions);
 		for (from => transitions in _transitions) {
 			addEdges(nodeId(from), transitions);
+		}
+		// Declared last, so the other States keep their ids when the current State changes.
+		if (_currentState != null) {
+			nodeId(_currentState);
 		}
 
 		var nodeLines = [for (state in states) '  ${nodeIds.get(state)} [${nodeAttributes(state, next)}];'];
