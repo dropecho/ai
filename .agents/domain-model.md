@@ -71,6 +71,7 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 | A Task node only refers to a registered Task: an unknown name throws when the node is built | `TaskBank.get` |
 | Every Composite and Decorator defines `execute` | Compiler: `CompositeNode` and `DecoratorNode` are abstract classes |
 | A state machine ticks only once it has a State | `FSM.tick` throws |
+| A Transition is taken only from the State object it was added for, even if another State has the same name | `FSM._transitions` (an `ObjectMap` keyed by State) |
 | A composite returns to its first child whenever it returns SUCCESS or FAILURE | `SelectorNode.execute`, `SequenceNode.execute` |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
 | Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
@@ -119,7 +120,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 - **State machine:** holds one current State and moves between States when a Condition
   becomes true. Owner: `fsm.FSM`.
 - **State:** a game-defined mode an agent is in, with enter, exit and per-tick behaviour.
-  It is known by its name. Owner: `fsm.IState` (exposed as `fsm.State`).
+  Its name is for display; Transitions belong to the State object itself. Owner: `fsm.IState`
+  (exposed as `fsm.State`).
 - **Transition:** a move to a target State, taken when its Condition is true. Owner:
   `fsm.Transition` (in `FSM.hx`).
 - **Condition:** a game-defined yes/no question asked after each tick. Owner:
