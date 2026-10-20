@@ -134,7 +134,9 @@ class Planner {
 
 	private function _hasAll(conditions:Array<String>, required:Array<String>):Bool {
 		for (condition in required) {
-			if (conditions.indexOf(condition) < 0) return false;
+			if (conditions.indexOf(condition) < 0) {
+				return false;
+			}
 		}
 		return true;
 	}
@@ -142,7 +144,9 @@ class Planner {
 	private function _applyPostconditions(conditions:Array<String>, postconditions:Array<String>):Array<String> {
 		var result = conditions.copy();
 		for (post in postconditions) {
-			if (result.indexOf(post) < 0) result.push(post);
+			if (result.indexOf(post) < 0) {
+				result.push(post);
+			}
 		}
 		return result;
 	}
