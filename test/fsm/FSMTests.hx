@@ -135,4 +135,24 @@ class FSMTests extends Test {
 		Assert.isTrue(dot.indexOf("digraph") >= 0);
 		Assert.isTrue(dot.indexOf("EatingState") >= 0);
 	}
+
+	public function test_states_with_the_same_name_keep_their_own_transitions() {
+		var bb2 = new Blackboard();
+		var firstWander = new WanderState(bb2);
+		var secondWander = new WanderState(bb2);
+		var eat = new EatingState(bb2);
+
+		var fsm2 = new FSM();
+		fsm2.addTransition(firstWander, eat, () -> true);
+		fsm2.changeToState(secondWander);
+		fsm2.tick();
+
+		Assert.equals(secondWander, fsm2.getCurrentState());
+	}
+
+	public function test_toDot_before_any_state_does_not_throw() {
+		var fsm2 = new FSM();
+		fsm2.addTransition(_st1, _st2, () -> false);
+		Assert.isTrue(fsm2.toDot().indexOf("digraph") >= 0);
+	}
 }

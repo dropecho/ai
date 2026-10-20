@@ -5,7 +5,7 @@ package dropecho.ai.fsm;
 @:nativeChildren
 interface IState {
 	/**
-	 * Names the State; the state machine keys Transitions by this name, so it must be unique.
+	 * Names the State, for display such as the State graph. Transitions belong to the State object, so names need not be unique.
 	 *
 	 * @return The State's name.
 	 */

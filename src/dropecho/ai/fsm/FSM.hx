@@ -1,7 +1,7 @@
 package dropecho.ai.fsm;
 
 import dropecho.interop.AbstractFunc.Func_0;
-import dropecho.interop.AbstractMap;
+import haxe.ds.ObjectMap;
 
 /** A game-defined yes/no question; when it returns true its Transition is taken. It should only read state. */
 typedef Condition = Func_0<Bool>;
@@ -35,8 +35,8 @@ class Transition {
 @:nativeGen
 class FSM {
 	var _currentState:IState;
-	/* Transitions from a given state to another */
-	var _transitions = new AbstractMap<String, Array<Transition>>();
+	/* Transitions from a given state to another, keyed by the State itself. ObjectMap, because AbstractMap stringifies object keys on JS. */
+	var _transitions = new ObjectMap<IState, Array<Transition>>();
 	/* Transitions from any state to another */
 	var _anyTransitions = new Array<Transition>();
 
@@ -83,7 +83,7 @@ class FSM {
 
 	/**
 	 * Adds a Transition from `fromState` to `toState`, taken when `condition` is true.
-	 * Transitions are keyed by State name and checked in the order they were added.
+	 * Transitions belong to `fromState` itself, not its name, and are checked in the order they were added.
 	 *
 	 * @param fromState - The State the Transition leaves from.
 	 * @param toState - The State the Transition moves to.
@@ -94,11 +94,11 @@ class FSM {
 
 		var transitions:Array<Transition> = null;
 
-		if (_transitions.exists(fromState.getName())) {
-			transitions = _transitions.get(fromState.getName());
+		if (_transitions.exists(fromState)) {
+			transitions = _transitions.get(fromState);
 		} else {
 			transitions = new Array<Transition>();
-			_transitions.set(fromState.getName(), transitions);
+			_transitions.set(fromState, transitions);
 		}
 
 		transitions.push(t);
@@ -122,12 +122,16 @@ class FSM {
 			}
 		}
 
-		var currentStateHasTransitions = _transitions.exists(_currentState?.getName());
+		if (_currentState == null) {
+			return null;
+		}
+
+		var currentStateHasTransitions = _transitions.exists(_currentState);
 		if (currentStateHasTransitions == false) {
 			return null;
 		}
 
-		var _currentTransitions = _transitions.get(_currentState?.getName());
+		var _currentTransitions = _transitions.get(_currentState);
 		if (_currentTransitions != null) {
 			for (t in _currentTransitions) {
 				if (t.condition()) {
@@ -163,7 +167,8 @@ class FSM {
 			}
 		}
 
-		for (key => value in _transitions) {
+		for (state => value in _transitions) {
+			var key = state.getName();
 			nodeOutput = nodeOutput + "\n" + key;
 
 			var v:Array<Transition> = value;
@@ -176,7 +181,7 @@ class FSM {
 			}
 			edgeOutput = edgeOutput + '\n $key -> $key';
 
-			var isCurrentState = _currentState != null && key == _currentState.getName();
+			var isCurrentState = state == _currentState;
 			if (isCurrentState) {
 				if (activeTransition == null) {
 					nodeOutput += '[class="active"]';
