@@ -5,9 +5,9 @@ using Lambda;
 import dropecho.util.CurrentIterator;
 
 /**
- * The base for nodes with several children, run in order, one child per tick.
+ * The base for nodes with several children, run in order; one tick runs on through children until one decides the result or is running.
  *
- * Its child cursor keeps its place between ticks, so the next tick resumes at the child it reached.
+ * Its child cursor keeps its place between ticks, so a running child is resumed next tick without re-running the children before it.
  */
 abstract class CompositeNode implements Node {
 	private var children:Array<Node>;
@@ -42,7 +42,7 @@ abstract class CompositeNode implements Node {
 	}
 
 	/**
-	 * Runs the current child for one tick and moves the child cursor.
+	 * Runs children from the current one for this tick and moves the child cursor.
 	 *
 	 * @return The composite's Status for this tick.
 	 */
