@@ -42,7 +42,7 @@ class PlannerTests extends Test {
 		_planner = new Planner(_goal, [_action1, _action2]);
 		_plan = _planner.generatePlan();
 
-		Assert.equals(_plan._actions.peek(), _action2);
+		Assert.equals(_action2, _plan.currentAction);
 	}
 
 	public function test_when_given_two_equal_cost_actions_plan_should_contain_the_first_given() {
@@ -51,7 +51,7 @@ class PlannerTests extends Test {
 		_planner = new Planner(_goal, [first, second]);
 		_plan = _planner.generatePlan();
 
-		Assert.equals(first, _plan._actions.peek());
+		Assert.equals(first, _plan.currentAction);
 	}
 
 	public function test_when_given_chained_actions_plan_should_contain_both_in_order() {
@@ -63,8 +63,7 @@ class PlannerTests extends Test {
 
 		Assert.notNull(_plan);
 		Assert.equals(2, _plan.length);
-		Assert.equals(actionB, _plan._actions.dequeue());
-		Assert.equals(actionA, _plan._actions.dequeue());
+		Assert.same([actionB, actionA], [for (action in _plan) action]);
 	}
 
 	public function test_when_given_empty_action_list_plan_should_be_null() {
@@ -97,8 +96,7 @@ class PlannerTests extends Test {
 
 		Assert.notNull(_plan);
 		Assert.equals(2, _plan.length);
-		Assert.equals(step1, _plan._actions.dequeue());
-		Assert.equals(step2, _plan._actions.dequeue());
+		Assert.same([step1, step2], [for (action in _plan) action]);
 	}
 
 	public function test_circular_dependencies_do_not_infinite_loop() {
