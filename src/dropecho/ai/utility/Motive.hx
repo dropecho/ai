@@ -19,7 +19,7 @@ class UtilityAgent {
 
 	public function new() {}
 
-	public function getMostImportantMotive() {
+	public function getMostImportantMotive():Null<Motive> {
 		return motives.fold(foldToLowestMotive, null);
 	}
 
@@ -30,7 +30,7 @@ class UtilityAgent {
 		return motive;
 	}
 
-	inline public function toString() {
+	inline public function toString():String {
 		return Json.stringify(motives, null, "  ");
 	}
 }
