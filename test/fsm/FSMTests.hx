@@ -37,6 +37,31 @@ class EatingState extends BlackboardState implements IState {
 	}
 }
 
+class CountingState implements IState {
+	var _name:String;
+
+	public var enters = 0;
+	public var exits = 0;
+
+	public function new(name:String) {
+		_name = name;
+	}
+
+	public function getName() {
+		return _name;
+	}
+
+	public function onEnter() {
+		enters++;
+	}
+
+	public function onExit() {
+		exits++;
+	}
+
+	public function tick() {}
+}
+
 class FSMTests extends Test {
 	private var _bb:Blackboard;
 	private var _st1:WanderState;
@@ -154,5 +179,35 @@ class FSMTests extends Test {
 		var fsm2 = new FSM();
 		fsm2.addTransition(_st1, _st2, () -> false);
 		Assert.isTrue(fsm2.toDot().indexOf("digraph") >= 0);
+	}
+
+	public function test_any_transition_to_the_current_state_is_not_taken() {
+		var flee = new CountingState("flee");
+		var fsm2 = new FSM();
+		fsm2.addAnyTransition(flee, () -> true);
+		fsm2.changeToState(flee);
+
+		fsm2.tick();
+		fsm2.tick();
+
+		Assert.equals(flee, fsm2.getCurrentState());
+		Assert.equals(1, flee.enters);
+		Assert.equals(0, flee.exits);
+	}
+
+	public function test_transition_to_the_current_state_is_skipped_for_the_next_one() {
+		var idle = new CountingState("idle");
+		var walk = new CountingState("walk");
+		var fsm2 = new FSM();
+		fsm2.addAnyTransition(idle, () -> true);
+		fsm2.addTransition(idle, idle, () -> true);
+		fsm2.addTransition(idle, walk, () -> true);
+		fsm2.changeToState(idle);
+
+		fsm2.tick();
+
+		Assert.equals(walk, fsm2.getCurrentState());
+		Assert.equals(1, idle.enters);
+		Assert.equals(1, idle.exits);
 	}
 }

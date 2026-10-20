@@ -45,7 +45,7 @@ class FSM {
 
 	/**
 	 * Ticks the current State, then takes the first Transition whose Condition is true.
-	 * Any-transitions are checked before the current State's own Transitions.
+	 * Any-transitions are checked before the current State's own Transitions; Transitions to the current State are skipped.
 	 * Throws if no State has been set with `changeToState`.
 	 */
 	public function tick():Void {
@@ -115,26 +115,21 @@ class FSM {
 		_anyTransitions.push(new Transition(to, condition));
 	}
 
+	/**
+	 * Finds the Transition the next tick would take: the first one whose Condition is true, any-transitions first.
+	 * Transitions to the current State are skipped without asking their Condition, so a State is never re-entered.
+	 *
+	 * @return The Transition to take, or null if none.
+	 */
 	private function getTransition():Transition {
-		for (t in _anyTransitions) {
-			if (t.condition()) {
-				return t;
+		var ownTransitions = _currentState == null ? null : _transitions.get(_currentState);
+		for (transitions in [_anyTransitions, ownTransitions]) {
+			if (transitions == null) {
+				continue;
 			}
-		}
-
-		if (_currentState == null) {
-			return null;
-		}
-
-		var currentStateHasTransitions = _transitions.exists(_currentState);
-		if (currentStateHasTransitions == false) {
-			return null;
-		}
-
-		var _currentTransitions = _transitions.get(_currentState);
-		if (_currentTransitions != null) {
-			for (t in _currentTransitions) {
-				if (t.condition()) {
+			for (t in transitions) {
+				var leavesCurrentState = t.to != _currentState;
+				if (leavesCurrentState && t.condition()) {
 					return t;
 				}
 			}
