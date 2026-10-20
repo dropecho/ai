@@ -10,16 +10,30 @@ import dropecho.interop.AbstractMap;
 private typedef WorldStateGraph = Graph<Array<String>, Action>;
 private typedef WorldStateNode = IGraphNode<Array<String>, Action>;
 
+/**
+ * Finds the cheapest Plan from the empty world state to a goal using the given Actions.
+ */
 @:expose("goap.Planner")
 class Planner {
 	private var _availableActions:AbstractArray<Action>;
 	private var _goal:State;
 
+	/**
+	 * Creates a Planner for one goal.
+	 *
+	 * @param goal - The goal to reach.
+	 * @param availableActions - The Actions the Plan may use; the Planner never changes this list.
+	 */
 	public function new(goal:State, availableActions:AbstractArray<Action>) {
 		_goal = goal;
 		_availableActions = availableActions;
 	}
 
+	/**
+	 * Plans from the empty world state to the goal by total Cost; among equal-cost Actions the first given wins.
+	 *
+	 * @return The cheapest Plan, or null if the goal cannot be reached.
+	 */
 	public function generatePlan():Null<Plan> {
 		var graph = new WorldStateGraph();
 		var start = graph.createNode([], _stateKey([]));
