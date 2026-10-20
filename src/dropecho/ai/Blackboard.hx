@@ -17,10 +17,10 @@ class Blackboard {
 	}
 
 	inline public function increment(key:String):Float {
-		return _facts.set(key, _facts.get(key) + 1);
+		return _facts.set(key, get(key) + 1);
 	}
 
 	inline public function decrement(key:String):Float {
-		return _facts.set(key, _facts.get(key) - 1);
+		return _facts.set(key, get(key) - 1);
 	}
 }
