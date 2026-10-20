@@ -14,7 +14,21 @@ class TaskBank {
 		tasks.set(name, task);
 	}
 
-	inline public static function get(name:String):Task {
+	public static function get(name:String):Task {
+		var isRegistered = tasks.exists(name);
+		if (isRegistered == false) {
+			throw unknownTaskMessage(name);
+		}
+
 		return tasks.get(name);
+	}
+
+	private static function unknownTaskMessage(name:String):String {
+		var registeredNames = [for (registeredName in tasks.keys()) registeredName];
+		registeredNames.sort(Reflect.compare);
+		var registeredList = registeredNames.length == 0 ? "(none)" : registeredNames.join(", ");
+
+		return 'Unknown task "$name". Registered tasks: $registeredList.\n'
+			+ 'Register it first with: TaskBank.register("$name", context -> NODE_STATUS.SUCCESS)';
 	}
 }

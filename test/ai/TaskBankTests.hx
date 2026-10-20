@@ -30,4 +30,18 @@ class TaskBankTests extends Test {
 		var result = task(bb);
 		Assert.equals(NODE_STATUS.SUCCESS, result);
 	}
+
+	public function test_get_of_an_unknown_task_throws_naming_it_and_how_to_register_it() {
+		var message = "";
+		try {
+			TaskBank.get("unregistered_task");
+		} catch (e) {
+			message = e.message;
+		}
+
+		Assert.stringContains('Unknown task "unregistered_task"', message);
+		Assert.stringContains("Registered tasks: ", message);
+		Assert.stringContains("test_task", message);
+		Assert.stringContains('TaskBank.register("unregistered_task", context -> NODE_STATUS.SUCCESS)', message);
+	}
 }
