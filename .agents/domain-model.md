@@ -15,7 +15,7 @@ blackboard of facts.
 ## Flow
 
 ```
-Behavior tree:  Blackboard → BehaviorTree.init → every node     ;  tick: execute() → root → … → task → Status
+Behavior tree:  Blackboard → BehaviorTree.init → every node     ;  tick: execute(deltaTime) → root → … → task → Status ; abandoned RUNNING nodes ← halt()
 State machine:  tick() → current State.tick() → first true Condition among Transitions to another State (any-transitions first) → change State
 Goal planner:   World state provider + Goal + Actions → Planner → Plan  ;  tick: Plan.update(dt) → front Action.update(dt)
 Utility:        Motives → UtilityAgent → most important Motive (lowest value, first on a tie)
@@ -48,7 +48,16 @@ composite **runs on through its children** until one returns the deciding status
 child finishes, or a child is RUNNING. A composite returns RUNNING only when a child is
 RUNNING; next tick it resumes that child without re-running the children before it.
 A reactive composite instead starts from its first child every tick, so it never resumes a
-child; a child it stops reaching is not halted, just not ticked until reached again.
+child. A child that was RUNNING and is not reached again (an earlier child decided, or a
+different child is now RUNNING) is halted.
+
+### Node run
+
+```
+idle --execute--> RUNNING --execute--> RUNNING …
+                          --execute returns SUCCESS/FAILURE--> idle
+                          --parent abandons it: halt()--> idle (per-run state cleared, running children halted)
+```
 
 ### State machine
 
@@ -86,6 +95,8 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 | A composite returns to its first child whenever it returns SUCCESS or FAILURE | `CompositeNode.runChildren` |
 | A composite returns RUNNING only when its current child returned RUNNING | `CompositeNode.runChildren` |
 | A reactive composite starts every tick at its first child | `CompositeNode.runChildren` resets the child cursor when `reactive` |
+| A RUNNING node that its parent will not tick again is halted | `CompositeNode.runChildren` / `halt`, `DecoratorNode.halt`, `BehaviorTree.halt` |
+| Every node in a tick gets the same delta time | `BehaviorTree.execute(deltaTime)` passes it down; composites and decorators forward it |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
 | Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
 | A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from the world state provider's current world state (the empty one if none is given) | `Planner.generatePlan` (Dijkstra over every reachable world state) |
@@ -108,16 +119,24 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 - **Behavior tree:** a tree of nodes run once per tick; the root's status is the tree's
   status. Owner: `bt.BehaviorTree`.
 - **Node:** one step of a behavior tree. It is given the Blackboard once, then executed
-  each tick and answers with a Status. Owner: `bt.node.Node`, built on `IExecutable<T>`.
+  each tick with the time since the last tick and answers with a Status. If its parent
+  abandons it while RUNNING, it is halted and starts afresh next time. Owner:
+  `bt.node.Node` (`execute(deltaTime)`, `halt()`), built on `IExecutable<T>`.
+- **Delta time:** the time since the last tick, in the game's own unit; the game passes it to
+  `BehaviorTree.execute` and every node receives it. Owner: the `deltaTime` parameter.
+- **Halt:** telling a RUNNING node its parent will not tick it again for now, so it stops
+  work in progress and clears per-run state. Owner: `Node.halt`.
 - **Status:** a node's answer for this tick: SUCCESS, FAILURE or RUNNING (not finished,
   ask again next tick). Owner: `bt.node.NODE_STATUS`.
 - **Task:** a game-defined function that does the work of a leaf: it gets the Blackboard
-  and returns a Status. Owner: `dropecho.ai.Task` (typedef in `TaskBank.hx`).
+  and the delta time and returns a Status. It has no halt; use a Leaf node for work that
+  must be stopped. Owner: `dropecho.ai.Task` (typedef in `TaskBank.hx`).
 - **Task registry:** where game code registers Tasks by name, so trees can refer to them
   by name. Owner: `dropecho.ai.TaskBank` (`register`, `get`).
 - **Task node:** a leaf that runs a registered Task. Owner: `bt.node.TaskNode`.
 - **Leaf node:** the base for game-defined leaves that are classes instead of Tasks.
-  Owner: `bt.node.LeafNode`, an abstract class; subclasses implement `execute`.
+  Owner: `bt.node.LeafNode`, an abstract class; subclasses implement `execute` and may
+  override `halt`.
 - **Composite:** a node with several children, run in order; in one tick it runs on to
   the next child until the result is decided or a child is RUNNING. Owner:
   `bt.node.composite.CompositeNode`.
