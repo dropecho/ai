@@ -42,10 +42,10 @@ src/dropecho/ai/           # library source
       composite/           # SelectorNode, SequenceNode, ChildCursor
       decorator/           # InverterNode, RepeaterNode, RepeatUntilNode, SucceederNode
   fsm/                     # FSM, IState, Transition
-  goap/                    # Action, Plan, Planner, State
+  goap/                    # Action, Goal, Plan, Planner, WorldStateProvider
   utility/                 # Motive, UtilityAgent
 test/                      # utest test suites (mirroring src structure)
-  ai/  bt/  fsm/  goap/  util/  utility/
+  ai/  bt/  fsm/  goap/  utility/
 targets/                   # per-target HXML fragments
 docs/                      # compiled docs output
 .agents/                   # extended AI agent documentation

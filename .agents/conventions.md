@@ -34,10 +34,15 @@
 - Composite nodes use a `ChildCursor` to track position across ticks — reset it in the same call where you return SUCCESS or FAILURE.
 - Do not store per-tick state on the `Blackboard` unless it must persist across tree restarts.
 
+## Exposed APIs
+
+- Use methods, not Haxe properties, for anything JS must read: properties compile to `get_x()` in the CJS bundle, and genes (ESM) only emits some getters.
+
 ## GOAP Conventions
 
-- `Action` fields are PascalCase (`ActionType`, `Cost`, `Preconditions`, `Postconditions`) — follow this for consistency.
-- Preconditions and Postconditions are `Array<String>` — use descriptive lowercase strings as condition names (e.g. `"has_weapon"`, `"enemy_dead"`).
+- `Action` members are camelCase like the rest (`name`, `cost`, `preconditions`, `postconditions`, `onUpdate`, `startCheck`, `doneCheck`).
+- An Action needs a done check or a world state provider on its Plan; `Plan.new` throws otherwise.
+- Preconditions and postconditions are `Array<String>` — use descriptive lowercase strings as condition names (e.g. `"has_weapon"`, `"enemy_dead"`).
 - The `Planner` only reads the Action list it is given; among Actions with the same Cost and effect, the first given wins.
 
 ## Commit Conventions (Angular style)

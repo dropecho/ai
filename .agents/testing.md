@@ -22,6 +22,7 @@ Test files mirror source files under `test/`, organized by module:
 | `src/dropecho/ai/bt/node/decorator/SucceederNode.hx` | `test/bt/node/decorator/SucceederNodeTests.hx` |
 | `src/dropecho/ai/fsm/FSM.hx` | `test/fsm/FSMTests.hx` |
 | `src/dropecho/ai/goap/Action.hx` | `test/goap/ActionTests.hx` |
+| `src/dropecho/ai/goap/Goal.hx` | `test/goap/GoalTests.hx` |
 | `src/dropecho/ai/goap/Plan.hx` | `test/goap/PlanTests.hx` |
 | `src/dropecho/ai/goap/Planner.hx` | `test/goap/PlannerTests.hx` |
 | `src/dropecho/ai/bt/node/composite/ChildCursor.hx` | `test/bt/node/composite/ChildCursorTests.hx` |
@@ -51,5 +52,4 @@ Test files mirror source files under `test/`, organized by module:
 - No tests for `TaskNode` or `TaskBank` directly.
 - No tests for `UtilityAgent.getMostImportantMotive()` with multiple motives.
 - No tests for `FSM.toDot()` output format.
-- No tests for `GOAP` with unsatisfiable goals (should return `null` from `generatePlan()`).
-- No tests for `Plan.update()` delta time propagation to `Action.UpdateFunc`.
+- No tests for `Plan.update()` delta time propagation to `Action.onUpdate`.

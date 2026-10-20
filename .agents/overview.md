@@ -39,12 +39,12 @@ Transition-based state management with typed conditions.
 
 ### GOAP (Goal-Oriented Action Planning)
 
-Backward-chaining planner that builds an ordered action sequence to satisfy a goal.
+Searches every world state reachable from the current one and returns the cheapest ordered sequence of Actions that reaches a Goal.
 
-- **`State`** — a goal: list of string preconditions + relevance score
-- **`Action`** — has `ActionType`, `Cost`, `Preconditions[]`, `Postconditions[]`, `UpdateFunc`, `PreMatcher`, `PostMatcher`
-- **`Planner`** — given a `State` goal and available `Action[]`, generates a `Plan` via backward chaining
-- **`Plan`** — ordered `Queue<Action>`; `update(dT)` ticks the current action; dequeues when postconditions satisfied
+- **`Goal`** — the condition names the agent wants true (`conditions`)
+- **`Action`** — `name`, `cost`, `preconditions`, `postconditions`, `onUpdate`, optional `startCheck` / `doneCheck`
+- **`Planner`** — given a `Goal`, available Actions and an optional world state provider, generates the cheapest `Plan` (BFS + Dijkstra)
+- **`Plan`** — the Actions in order; `update(dT)` ticks the current one and drops those that are done (done check, or postconditions in the world state)
 
 ### Utility AI
 

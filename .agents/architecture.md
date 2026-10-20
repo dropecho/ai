@@ -30,10 +30,11 @@ src/dropecho/ai/
 │   ├── FSM.hx                 # State machine, plus Transition and the Condition typedef
 │   └── IState.hx              # State interface: getName, onEnter, onExit, tick
 ├── goap/
-│   ├── Action.hx              # Action: Cost, pre/postconditions, update function, done check
-│   ├── Plan.hx                # Queue<Action>; updates the front Action, drops finished ones
-│   ├── Planner.hx             # Builds the cheapest Plan to a Goal
-│   └── State.hx               # Goal: the Condition names wanted true
+│   ├── Action.hx              # Action: cost, pre/postconditions, onUpdate, optional done check
+│   ├── Goal.hx                # Goal: the Condition names wanted true
+│   ├── Plan.hx                # Private queue of Actions; updates the front one, drops those that are done
+│   ├── Planner.hx             # Builds the cheapest Plan to a Goal from the current world state
+│   └── WorldStateProvider.hx  # Typedef: game function returning the Condition names true now
 └── utility/
     └── Motive.hx              # Motive and UtilityAgent
 
@@ -70,19 +71,21 @@ game: fsm.tick()
 ## GOAP Execution Flow
 
 ```
-var plan = new Planner(goal, actions).generatePlan();   // null if the Goal is unreachable
-  → breadth-first search over every world state reachable from the empty one,
+var plan = new Planner(goal, actions, worldState).generatePlan();   // null if the Goal is unreachable
+  → breadth-first search over every world state reachable from worldState() (or the empty one),
     applying each Action whose preconditions hold; the results form a dropecho.ds Graph
     (nodes = world states, edges = the cheapest Action between two states;
      among equal Costs the first Action given wins)
-  → Dijkstra from the empty world state; the reachable state that satisfies the Goal
+  → Dijkstra from that start world state; the reachable state that satisfies the Goal
     with the lowest total Cost wins
-  → the Actions along that path, in order, become the Plan
+  → the Actions along that path, in order, become the Plan, which gets the same provider
+    (new Plan throws if an Action has no done check and there is no provider)
 
 // per game tick:
 var done = plan.update(dt);
   → front Action.update(dt)
-  → isCompleted(): loop, dropping front Actions whose done check is true;
+  → isCompleted(): loop, dropping front Actions that are done (Action.isDone(worldState):
+    their done check, or else all postconditions in the provider's world state);
     true when no Actions are left
 ```
 

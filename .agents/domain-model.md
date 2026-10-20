@@ -17,7 +17,7 @@ blackboard of facts.
 ```
 Behavior tree:  Blackboard → BehaviorTree.init → every node     ;  tick: execute() → root → … → task → Status
 State machine:  tick() → current State.tick() → first true Condition among Transitions to another State (any-transitions first) → change State
-Goal planner:   Goal + Actions → Planner → Plan  ;  tick: Plan.update(dt) → front Action.update(dt)
+Goal planner:   World state provider + Goal + Actions → Planner → Plan  ;  tick: Plan.update(dt) → front Action.update(dt)
 Utility:        Motives → UtilityAgent → most important Motive (lowest value, first on a tie)
 ```
 
@@ -29,8 +29,8 @@ Blackboard; the goal planner and utility do not. The goal planner depends on `dr
 
 | Actor | Is | Reaches the system through | May change |
 |---|---|---|---|
-| Game code | The game using the library | Constructors, `register`, `addTransition`, `tick` / `execute` / `update` | Everything it builds; the Blackboard; the task registry |
-| User behaviour | Task functions, State implementations, Action update functions, Conditions | Called by the library during a tick | The Blackboard and game state. Conditions are expected to only read |
+| Game code | The game using the library | Constructors, `register`, `addTransition`, `generatePlan`, `tick` / `execute` / `update` | Everything it builds; the Blackboard; the task registry |
+| User behaviour | Task functions, State implementations, Action update functions and done checks, Conditions, world state providers | Called by the library during a tick | The Blackboard and game state. Conditions are expected to only read |
 | The library | Nodes, FSM, Plan | Its own fields | Only its own position: a composite's current child, the FSM's current State, a Plan's remaining Actions |
 
 ## Lifecycles
@@ -61,8 +61,10 @@ never re-enters the current State; only an explicit `changeToState(S)` re-runs o
 ### Plan
 
 ```
+new Plan --an Action has no done check and there is no world state provider--> throws
 Actions pending --update(dt): front Action.update(dt)--> pending
-                --front Action's done check is true (checked on update and isCompleted)--> front dropped
+                --front Action is done (its done check, or else all its postconditions in
+                  the provider's current world state; checked on update and isCompleted)--> front dropped
                 --no Actions left--> completed
 ```
 
@@ -83,7 +85,10 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 | A composite returns RUNNING only when its current child returned RUNNING | `CompositeNode.runChildren` |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
 | Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
-| A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from an empty world state | `Planner.generatePlan` (Dijkstra over every reachable world state) |
+| A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from the world state provider's current world state (the empty one if none is given) | `Planner.generatePlan` (Dijkstra over every reachable world state) |
+| Every Action in a Plan has a way to finish: its own done check, or a world state provider on the Plan | `Plan.new` throws |
+| Condition names containing `,` stay distinct in a world state | `Planner._stateKey` (JSON-encoded sorted names) |
+| Only the Plan changes its remaining Actions | `Plan._actions` is private |
 | A Plan runs its Actions in the order the Planner chose | `Plan.new` enqueues one at a time |
 
 ## Glossary
@@ -145,26 +150,32 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 ### Goal planner
 
 - **Condition name:** a word for something true about the world, such as `has_weapon`.
-  Owner: `String` in `Action.Preconditions` / `Postconditions` and `State.Preconditions`.
+  Owner: `String` in `Action.preconditions` / `postconditions` and `Goal.conditions`.
 - **World state:** the set of Condition names true at one point in a plan. Planning starts
-  from the empty world state. Owner: the value of each node in `Planner`'s graph
-  (`Array<String>`); the node's label is the sorted comma-joined key from `_stateKey`.
+  from the world state the game provides, or the empty one. Owner: the value of each node
+  in `Planner`'s graph (`Array<String>`); the node's label is the JSON-encoded sorted names
+  from `_stateKey`.
+- **World state provider:** a game-supplied function returning the Condition names true
+  right now. The Planner plans from it and hands it to the Plan, which uses it for Actions
+  without a done check of their own. Owner: `goap.WorldStateProvider` (typedef of
+  `Func_0<Array<String>>`).
 - **Action:** something an agent can do, with a Cost, the Condition names it needs
   (preconditions), the Condition names it makes true (postconditions), and an update
-  function run each tick while it is the current Action. Owner: `goap.Action`;
-  `ActionType` is its name.
-- **Done check:** a game-defined question that says whether the current Action has
-  finished in the running game. It is separate from the postconditions, which are only
-  used to plan. Owner: `Action.PostMatcher`, asked through `postconditions_satisfied()`.
-  `PreMatcher` / `preconditions_satisfied()` is the same kind of check before starting;
-  nothing in the library calls it.
-- **Goal:** the Condition names the agent wants true. Owner: `goap.State` (field
-  `Preconditions`; `Relevance` is stored but unused).
-- **Planner:** finds the cheapest Plan from the empty world state to a Goal using the given
-  Actions, or none. Owner: `goap.Planner.generatePlan`.
+  function (`onUpdate`) run each tick while it is the current Action. Owner: `goap.Action`;
+  `name` is its name.
+- **Done check:** a game-defined question saying whether an Action has finished. Optional:
+  an Action without one is done when all its postconditions are in the current world
+  state. Owner: `Action.doneCheck` (null means none), asked through
+  `Action.isDone(worldState)`. `startCheck` / `canStart()` is the same kind of check before
+  starting; nothing in the library calls it.
+- **Goal:** the Condition names the agent wants true. Owner: `goap.Goal` (field
+  `conditions`).
+- **Planner:** finds the cheapest Plan from the current world state to a Goal using the
+  given Actions, or none. Owner: `goap.Planner.generatePlan`.
 - **Plan:** the Actions to run in order. Each tick the front Action updates, and Actions
-  whose done check is true are dropped. Owner: `goap.Plan`; `currentAction` is the front
-  Action, and iterating a Plan gives the remaining Actions in order.
+  that are done are dropped. Owner: `goap.Plan`; `currentAction()` is the front Action;
+  `length()`, `remainingActions()` (an Array) and iteration give the remaining Actions in
+  order.
 
 ### Utility
 
@@ -187,7 +198,7 @@ to the next child in the same tick until one decides or is RUNNING, and Decorato
 a child's Status, down to Task nodes that run Tasks from the
 Task registry. A state machine ticks its current State, then takes the first Transition
 whose Condition is true, any-transitions first. A Planner searches every World state
-reachable from the empty one using Actions' preconditions and postconditions, and returns
+reachable from the world state the game provides (or the empty one) using Actions' preconditions and postconditions, and returns
 the cheapest Plan to the Goal; the Plan then updates its front Action each tick and drops
-each Action whose done check is true. A Utility agent picks the Motive with the lowest
+each Action that is done. A Utility agent picks the Motive with the lowest
 value, the first on a tie.
