@@ -38,6 +38,15 @@ bb.get("thirst");       // 0
 bb.keys();              // ["hunger"]
 ```
 
+Besides number facts, a Blackboard holds **typed values**: any data your AI shares, such as a
+target entity or a path. Declare a key once, `static final TARGET = new BlackboardKey<Entity>("target");`,
+then `bb.setValue(TARGET, enemy)` and `bb.getValue(TARGET)` are type-checked in Haxe and C#; in
+JS a key is just its name (`bb.setValue("target", enemy)`). Values and facts are separate
+(`keys()` lists facts, `valueKeys()` lists values), a missing value reads as null, and
+`hasValue` / `removeValue` check and clear one. `const off = bb.onChange("target", key => ...)`
+is called after the fact or value of that name actually changes (including `increment` /
+`decrement`, but not writes of an equal value); call `off()` to stop listening.
+
 ## Behavior tree
 
 Register Tasks by name, build the tree from nodes, give it a Blackboard, then call

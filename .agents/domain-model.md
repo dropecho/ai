@@ -84,6 +84,10 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 | Invariant | Enforced by |
 |---|---|
 | A missing Blackboard fact reads as 0 | `Blackboard.get` (also used by `increment` / `decrement`) |
+| A missing Blackboard value reads as null | `Blackboard.getValue` |
+| Facts and values never overwrite each other, even with the same name | `Blackboard` keeps them in separate maps |
+| A change listener is called only when what is read back changes, never for a write of an equal value | `Blackboard.set`, `setValue`, `removeValue` |
+| A listener removed during a notification is not called again; one added waits for the next change | `Blackboard.notifyChange` iterates a copy |
 | A behavior tree has a root | `BehaviorTree.new` requires `root` and throws on null |
 | A Task node only refers to a registered Task: an unknown name throws when the node is built | `TaskBank.get` |
 | Every Composite, Decorator and Leaf node defines `execute` | Compiler: `CompositeNode`, `DecoratorNode` and `LeafNode` are abstract classes |
@@ -119,9 +123,16 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 
 ### Shared
 
-- **Blackboard:** the shared facts an agent's AI reads and writes, each a named number. A
-  fact never set reads as 0, and it can list the names of the facts that have been set
-  (`keys()`, sorted). Owner: `dropecho.ai.Blackboard`; called `context` in nodes.
+- **Blackboard:** the shared facts and values an agent's AI reads and writes. A fact is a
+  named number that reads as 0 if never set (`get`, `set`, `increment`, `decrement`; names
+  via `keys()`). A value is named data of any type, read and written through a Blackboard
+  key, that reads as null if never set (`getValue`, `setValue`, `hasValue`, `removeValue`;
+  names via `valueKeys()`). Facts and values are separate, even with the same name. Owner:
+  `dropecho.ai.Blackboard`; called `context` in nodes.
+- **Blackboard key:** the name of a Blackboard value, carrying the value's type at compile
+  time; at runtime it is just the name. Owner: `dropecho.ai.BlackboardKey<T>`.
+- **Change listener:** a game-defined function told the name of a fact or value after it
+  changes. Owner: `Blackboard.onChange` (returns the function that removes it).
 
 ### Behavior tree
 

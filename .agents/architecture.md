@@ -7,7 +7,8 @@ only maps it onto files and call flows.
 
 ```
 src/dropecho/ai/
-├── Blackboard.hx              # Blackboard: named Float facts, missing reads as 0
+├── Blackboard.hx              # Blackboard: number facts (missing reads 0), typed values, change listeners
+├── BlackboardKey.hx           # Typed key for Blackboard values (a String at runtime)
 ├── TaskBank.hx                # Task registry (name → Task) and the Task typedef
 ├── bt/
 │   ├── BehaviorTree.hx        # Behavior tree root; gives the Blackboard to every node

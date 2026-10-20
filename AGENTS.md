@@ -26,7 +26,7 @@ of game AI utilities. It compiles to JS (CJS + ESM) and C#.
 | **FSM** | `src/dropecho/ai/fsm/` | Finite State Machine with typed transitions |
 | **GOAP** | `src/dropecho/ai/goap/` | Goal-Oriented Action Planning |
 | **Utility AI** | `src/dropecho/ai/utility/` | Motive-driven utility scoring |
-| `Blackboard` | `src/dropecho/ai/Blackboard.hx` | Shared context (key→Float facts) |
+| `Blackboard` | `src/dropecho/ai/Blackboard.hx` | Shared context (number facts, typed values, change listeners) |
 | `TaskBank` | `src/dropecho/ai/TaskBank.hx` | Static registry of named BT tasks |
 
 See `.agents/architecture.md` for class responsibilities and data flows.
