@@ -38,7 +38,7 @@
 
 - `Action` fields are PascalCase (`ActionType`, `Cost`, `Preconditions`, `Postconditions`) — follow this for consistency.
 - Preconditions and Postconditions are `Array<String>` — use descriptive lowercase strings as condition names (e.g. `"has_weapon"`, `"enemy_dead"`).
-- `Planner` sorts actions by `Cost` ascending on construction — don't mutate `_availableActions` after that.
+- The `Planner` only reads the Action list it is given; among Actions with the same Cost and effect, the first given wins.
 
 ## Commit Conventions (Angular style)
 
