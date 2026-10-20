@@ -210,4 +210,31 @@ class FSMTests extends Test {
 		Assert.equals(1, idle.enters);
 		Assert.equals(1, idle.exits);
 	}
+
+	public function test_toDot_draws_an_edge_per_transition() {
+		_fsm.addAnyTransition(_st2, () -> false);
+
+		var edges = new DotGraph(_fsm.toDot()).edges();
+
+		Assert.contains("fsm.WanderState -> fsm.EatingState", edges);
+		Assert.contains("fsm.EatingState -> fsm.WanderState", edges);
+		Assert.contains("any -> fsm.EatingState", edges);
+	}
+
+	public function test_toDot_marks_the_transition_about_to_be_taken_active() {
+		_bb.set('hunger', 3);
+
+		var graph = new DotGraph(_fsm.toDot());
+
+		Assert.same(["fsm.WanderState -> fsm.EatingState"], graph.edgesWithClass("active"));
+	}
+
+	public function test_toDot_marks_an_any_transition_about_to_be_taken_active() {
+		var flee = new CountingState("flee");
+		_fsm.addAnyTransition(flee, () -> true);
+
+		var graph = new DotGraph(_fsm.toDot());
+
+		Assert.same(["any -> flee"], graph.edgesWithClass("active"));
+	}
 }
