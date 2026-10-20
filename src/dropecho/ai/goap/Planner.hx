@@ -12,32 +12,32 @@ private typedef WorldStateGraph = Graph<Array<String>, Action>;
 private typedef WorldStateNode = IGraphNode<Array<String>, Action>;
 
 /**
- * Finds the cheapest Plan from the current world state to a goal using the given Actions.
+ * Finds the cheapest Plan from the current world state to a Goal using the given Actions.
  */
 @:expose("goap.Planner")
 class Planner {
 	private var _availableActions:AbstractArray<Action>;
-	private var _goal:State;
+	private var _goal:Goal;
 	private var _worldState:Null<WorldStateProvider>;
 
 	/**
-	 * Creates a Planner for one goal.
+	 * Creates a Planner for one Goal.
 	 *
-	 * @param goal - The goal to reach.
+	 * @param goal - The Goal to reach.
 	 * @param availableActions - The Actions the Plan may use; the Planner never changes this list.
 	 * @param worldState - Returns the Condition names true in the game right now; planning starts there, or from the empty world state if left out. The Planner gives it to every Plan it returns.
 	 */
-	public function new(goal:State, availableActions:AbstractArray<Action>, ?worldState:WorldStateProvider) {
+	public function new(goal:Goal, availableActions:AbstractArray<Action>, ?worldState:WorldStateProvider) {
 		_goal = goal;
 		_availableActions = availableActions;
 		_worldState = worldState;
 	}
 
 	/**
-	 * Plans from the current world state to the goal by total Cost; among equal-cost Actions the first given wins.
+	 * Plans from the current world state to the Goal by total Cost; among equal-cost Actions the first given wins.
 	 * Throws, like `Plan.new`, if the Plan would hold an Action that has no done check and there is no world state provider.
 	 *
-	 * @return The cheapest Plan, or null if the goal cannot be reached.
+	 * @return The cheapest Plan, or null if the Goal cannot be reached.
 	 */
 	public function generatePlan():Null<Plan> {
 		var graph = new WorldStateGraph();
@@ -60,7 +60,7 @@ class Planner {
 	 *
 	 * @param graph - The graph to fill.
 	 * @param start - The starting world state's node, already in the graph.
-	 * @return The nodes that satisfy the goal, in the order they were reached.
+	 * @return The nodes that satisfy the Goal, in the order they were reached.
 	 */
 	private function _expandWorldStates(graph:WorldStateGraph, start:WorldStateNode):Array<WorldStateNode> {
 		var frontier = new Queue<WorldStateNode>();
@@ -71,7 +71,7 @@ class Planner {
 			var current = frontier.dequeue();
 			var conditions = current.value;
 
-			if (_hasAll(conditions, _goal.Preconditions)) {
+			if (_hasAll(conditions, _goal.conditions)) {
 				goalNodes.push(current);
 			}
 
@@ -117,9 +117,9 @@ class Planner {
 	}
 
 	/**
-	 * Follows the search's path back from the goal to collect the actions in the order they run.
+	 * Follows the search's path back from the Goal to collect the actions in the order they run.
 	 *
-	 * @param goal - The goal node to reach.
+	 * @param goal - The node that satisfies the Goal.
 	 * @param start - The starting world state's node.
 	 * @param graph - The expanded graph.
 	 * @param search - Dijkstra's result from `start`.

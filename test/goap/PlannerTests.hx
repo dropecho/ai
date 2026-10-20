@@ -5,7 +5,7 @@ import utest.Assert;
 import dropecho.ai.goap.Planner;
 import dropecho.ai.goap.Plan;
 import dropecho.ai.goap.Action;
-import dropecho.ai.goap.State;
+import dropecho.ai.goap.Goal;
 
 class PlannerTests extends Test {
 	private var _planner:Planner;
@@ -13,13 +13,13 @@ class PlannerTests extends Test {
 	private var _actionDone:Bool = false;
 	private var _action1:Action;
 	private var _action2:Action;
-	private var _goal:State;
+	private var _goal:Goal;
 
 	public function setup() {
 		_actionDone = false;
 		_action1 = new Action("test_action", deltaTime -> _actionDone = true, 1);
 		_action2 = new Action("test_action2", deltaTime -> _actionDone = true, 0);
-		_goal = new State(["test_condition"]);
+		_goal = new Goal(["test_condition"]);
 	}
 
 	public function test_when_given_no_matching_actions_plan_should_be_null() {
@@ -57,7 +57,7 @@ class PlannerTests extends Test {
 	public function test_when_given_chained_actions_plan_should_contain_both_in_order() {
 		var actionA = new Action("get_weapon", deltaTime -> {}, 1, ["found_weapon"], ["has_weapon"]);
 		var actionB = new Action("find_weapon", deltaTime -> {}, 1, [], ["found_weapon"]);
-		var goal = new State(["has_weapon"]);
+		var goal = new Goal(["has_weapon"]);
 		_planner = new Planner(goal, [actionA, actionB], () -> []);
 		_plan = _planner.generatePlan();
 
@@ -74,7 +74,7 @@ class PlannerTests extends Test {
 
 	public function test_when_goal_already_satisfied_by_start_state_plan_is_empty() {
 		// Goal with no preconditions is satisfied by the empty start state
-		var emptyGoal = new State([]);
+		var emptyGoal = new Goal([]);
 		_planner = new Planner(emptyGoal, [_action1], () -> []);
 		_plan = _planner.generatePlan();
 		Assert.notNull(_plan);
@@ -89,7 +89,7 @@ class PlannerTests extends Test {
 		var directAction = new Action("direct", _ -> {}, 10, [], ["goal_met"]);
 		var step1 = new Action("step1", _ -> {}, 1, [], ["intermediate"]);
 		var step2 = new Action("step2", _ -> {}, 1, ["intermediate"], ["goal_met"]);
-		var goal = new State(["goal_met"]);
+		var goal = new Goal(["goal_met"]);
 
 		_planner = new Planner(goal, [directAction, step1, step2], () -> []);
 		_plan = _planner.generatePlan();
@@ -104,7 +104,7 @@ class PlannerTests extends Test {
 		// Circular — no valid plan. Should return null without hanging.
 		var actionA = new Action("a", _ -> {}, 1, ["b"], ["a"]);
 		var actionB = new Action("b", _ -> {}, 1, ["a"], ["b"]);
-		var goal = new State(["a"]);
+		var goal = new Goal(["a"]);
 
 		_planner = new Planner(goal, [actionA, actionB]);
 		_plan = _planner.generatePlan();
@@ -115,7 +115,7 @@ class PlannerTests extends Test {
 		var makeAB = new Action("make_a_comma_b", _ -> {}, 1, [], ["a,b"]);
 		var makeA = new Action("make_a", _ -> {}, 1, [], ["a"]);
 		var makeB = new Action("make_b", _ -> {}, 1, ["a"], ["b"]);
-		_planner = new Planner(new State(["a", "b"]), [makeAB, makeA, makeB], () -> []);
+		_planner = new Planner(new Goal(["a", "b"]), [makeAB, makeA, makeB], () -> []);
 		_plan = _planner.generatePlan();
 
 		Assert.notNull(_plan);
@@ -125,7 +125,7 @@ class PlannerTests extends Test {
 	public function test_plans_from_the_world_state_provider() {
 		var findWeapon = new Action("find_weapon", _ -> {}, 1, [], ["found_weapon"]);
 		var getWeapon = new Action("get_weapon", _ -> {}, 1, ["found_weapon"], ["has_weapon"]);
-		_planner = new Planner(new State(["has_weapon"]), [findWeapon, getWeapon], () -> ["found_weapon"]);
+		_planner = new Planner(new Goal(["has_weapon"]), [findWeapon, getWeapon], () -> ["found_weapon"]);
 		_plan = _planner.generatePlan();
 
 		Assert.same([getWeapon], _plan.remainingActions());
