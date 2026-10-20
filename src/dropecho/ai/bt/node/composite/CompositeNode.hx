@@ -2,8 +2,6 @@ package dropecho.ai.bt.node.composite;
 
 using Lambda;
 
-import dropecho.util.CurrentIterator;
-
 /**
  * The base for nodes with several children, run in order; one tick runs on through children until one decides the result or is running.
  *
@@ -11,7 +9,7 @@ import dropecho.util.CurrentIterator;
  */
 abstract class CompositeNode implements Node {
 	private var children:Array<Node>;
-	private var childIterator:CurrentIterator<Node>;
+	private var childCursor:ChildCursor;
 	private var context:Blackboard;
 
 	/**
@@ -21,7 +19,7 @@ abstract class CompositeNode implements Node {
 	 */
 	public function new(children:Array<Node>) {
 		this.children = children;
-		this.childIterator = new CurrentIterator(children);
+		this.childCursor = new ChildCursor(children);
 	}
 
 	/**
@@ -49,7 +47,7 @@ abstract class CompositeNode implements Node {
 	 */
 	private function runChildren(decidingStatus:NODE_STATUS):NODE_STATUS {
 		while (true) {
-			var childStatus = this.childIterator
+			var childStatus = this.childCursor
 				.current()
 				.execute();
 
@@ -58,13 +56,13 @@ abstract class CompositeNode implements Node {
 			}
 
 			var isDecided = childStatus == decidingStatus;
-			var isLastChild = this.childIterator.hasNext() == false;
+			var isLastChild = this.childCursor.isOnLast();
 			if (isDecided || isLastChild) {
-				this.childIterator.reset();
+				this.childCursor.reset();
 				return childStatus;
 			}
 
-			this.childIterator.next();
+			this.childCursor.advance();
 		}
 	}
 
