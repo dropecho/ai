@@ -52,7 +52,7 @@ game: tree.init(blackboard)              # null → a new Blackboard
 
 game: tree.execute()                     # once per tick
   → root.execute()
-    → composite: current child.execute() # one child per tick (domain-model.md, "Composite position")
+    → composite: runChildren(deciding)   # from the current child on, same tick, until decided or RUNNING (domain-model.md, "Composite position")
     → decorator: child.execute(), then changes the Status
       → TaskNode.execute() → its registered Task(context) → Status
 ```

@@ -5,9 +5,9 @@ using Lambda;
 import dropecho.util.CurrentIterator;
 
 /**
- * The base for nodes with several children, run in order, one child per tick.
+ * The base for nodes with several children, run in order; one tick runs on through children until one decides the result or is running.
  *
- * Its child cursor keeps its place between ticks, so the next tick resumes at the child it reached.
+ * Its child cursor keeps its place between ticks, so a running child is resumed next tick without re-running the children before it.
  */
 abstract class CompositeNode implements Node {
 	private var children:Array<Node>;
@@ -42,7 +42,34 @@ abstract class CompositeNode implements Node {
 	}
 
 	/**
-	 * Runs the current child for one tick and moves the child cursor.
+	 * Runs children from the current one in the same tick, until a child returns the deciding status, the last child finishes, or a child is running.
+	 *
+	 * @param decidingStatus - The child Status that ends the composite early: SUCCESS for a Selector, FAILURE for a Sequence.
+	 * @return The deciding status, or the last child's Status (both return to the first child), or RUNNING when a child is running (resumed next tick).
+	 */
+	private function runChildren(decidingStatus:NODE_STATUS):NODE_STATUS {
+		while (true) {
+			var childStatus = this.childIterator
+				.current()
+				.execute();
+
+			if (childStatus == NODE_STATUS.RUNNING) {
+				return NODE_STATUS.RUNNING;
+			}
+
+			var isDecided = childStatus == decidingStatus;
+			var isLastChild = this.childIterator.hasNext() == false;
+			if (isDecided || isLastChild) {
+				this.childIterator.reset();
+				return childStatus;
+			}
+
+			this.childIterator.next();
+		}
+	}
+
+	/**
+	 * Runs children from the current one for this tick and moves the child cursor.
 	 *
 	 * @return The composite's Status for this tick.
 	 */

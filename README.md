@@ -63,7 +63,8 @@ var status = tree.execute(); // call every tick
 ```
 
 Register a Task before creating a `TaskNode` that names it. Composites (`SelectorNode`,
-`SequenceNode`) run one child per tick. Decorators (`InverterNode`, `RepeaterNode`,
+`SequenceNode`) run on to the next child in the same tick until the result is decided or a
+child returns `RUNNING`; a `RUNNING` child is resumed next tick. Decorators (`InverterNode`, `RepeaterNode`,
 `RepeatUntilNode`, `SucceederNode`) wrap a single child. For leaves that are classes
 rather than functions, extend `LeafNode` and override `execute()`.
 

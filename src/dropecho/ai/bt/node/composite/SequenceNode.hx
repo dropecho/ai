@@ -15,28 +15,11 @@ class SequenceNode extends CompositeNode {
 	}
 
 	/**
-	 * Runs the current child once; a succeeded child that is not the last moves the cursor to the next child, run on the next tick.
+	 * Runs children from the current one in the same tick: a succeeded child moves on to the next child, and a running child is resumed next tick.
 	 *
-	 * @return FAILURE when a child fails, SUCCESS when the last child succeeds (both return to the first child), otherwise RUNNING.
+	 * @return FAILURE when a child fails, SUCCESS when every child from the current one succeeds (both return to the first child), RUNNING when a child is running.
 	 */
 	public function execute():NODE_STATUS {
-		var childStatus = this.childIterator
-			.current()
-			.execute();
-
-		if (childStatus == NODE_STATUS.RUNNING) {
-			return NODE_STATUS.RUNNING;
-		}
-
-		var childFailed = (childStatus == NODE_STATUS.FAILURE);
-		var allChildrenSucceeded = this.childIterator.hasNext() == false && childStatus == NODE_STATUS.SUCCESS;
-
-		if (childFailed || allChildrenSucceeded) {
-			this.childIterator.reset();
-			return childStatus;
-		}
-
-		this.childIterator.next();
-		return NODE_STATUS.RUNNING;
+		return runChildren(NODE_STATUS.FAILURE);
 	}
 }

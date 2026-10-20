@@ -27,10 +27,11 @@
         registered by name in the Task registry, and every Task reads and writes the Blackboard.
       </p>
       <p>
-        Watch the highlighted nodes: a Composite runs <strong>one child per tick</strong>. When a
-        child finishes without deciding the result, the Composite answers RUNNING and moves its
-        cursor (▸) to the next child for the next tick. A Task that answers RUNNING is asked again
-        next tick.
+        Watch the highlighted nodes: in one tick a Composite <strong>runs on to the next
+        child</strong> until a child decides the result (SUCCESS for a Selector, FAILURE for a
+        Sequence), the last child finishes, or a child answers RUNNING. Every node that ran this
+        tick is highlighted. A RUNNING child keeps the Composite's cursor (▸) and is asked again
+        next tick, without re-running the children before it.
       </p>
 
       <div class="controls" role="group" aria-label="Tree controls">
@@ -43,7 +44,7 @@
       <div class="grid">
         <section class="panel" aria-labelledby="tree-heading">
           <h2 id="tree-heading" class="h3">Tree</h2>
-          <p class="muted">Highlighted: ran this tick, with its Status.</p>
+          <p class="muted">Highlighted: every node that ran this tick, with its Status. ▸: the child a Composite resumes next tick.</p>
           <ul id="tree" class="tree"></ul>
         </section>
 

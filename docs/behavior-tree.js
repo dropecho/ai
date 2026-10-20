@@ -128,7 +128,7 @@ function renderNode(view, isCursor) {
   }
   if (isCursor) {
     row.classList.add("cursor");
-    row.setAttribute("title", "The Composite's next child");
+    row.setAttribute("title", "The child this Composite resumes next tick");
   }
   const item = el("li", {}, [row]);
   if (view.children.length > 0) {
