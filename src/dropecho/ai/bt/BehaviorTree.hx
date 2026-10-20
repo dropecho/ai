@@ -16,11 +16,12 @@ class BehaviorTree implements Node {
 	/**
 	 * Creates a tree around a root node.
 	 *
-	 * @param root - The root node; throws if null.
+	 * @param root - The root node, usually a Composite; throws if null.
 	 */
-	public function new(root:Node = null) {
-		if (root == null) {
-			throw "Root cannot be null";
+	public function new(root:Node) {
+		var isMissingRoot = root == null;
+		if (isMissingRoot) {
+			throw "BehaviorTree needs a root node, but got null. Pass the node to run each tick, e.g. new BehaviorTree(new SequenceNode([...])).";
 		}
 
 		this.child = root;

@@ -79,11 +79,11 @@ function forEachView(view, visit) {
 
 // The child cursor is internal to a Composite; it is read here only to draw ▸.
 function cursorIndex(view) {
-  const iterator = view.node.childIterator;
-  if (!iterator) {
+  const cursor = view.node.childCursor;
+  if (!cursor) {
     return -1;
   }
-  const current = iterator.current();
+  const current = cursor.current();
   return view.children.findIndex((child) => child.wrapper === current);
 }
 

@@ -25,4 +25,15 @@ class BehaviorTreeTests extends Test {
 	public function test_tree_should_init_root_node_with_context() {
 		Assert.notNull(testNode.context);
 	}
+
+	public function test_new_should_throw_a_message_naming_the_fix_when_root_is_null() {
+		var message = "";
+		try {
+			new BehaviorTree(null);
+		} catch (e:String) {
+			message = e;
+		}
+
+		Assert.stringContains("new BehaviorTree(new SequenceNode(", message);
+	}
 }
