@@ -2,7 +2,7 @@
 
 const { SUCCESS, FAILURE, RUNNING } = bt.NODE_STATUS;
 const FACT_KEYS = ["hunger", "energy"];
-const FULL_ENERGY = 4;
+const FULL_ENERGY = 6;
 
 function isHungry(bb) {
   return bb.get("hunger") >= 3 ? SUCCESS : FAILURE;
@@ -17,6 +17,7 @@ function isTired(bb) {
 }
 
 function sleep(bb) {
+  bb.increment("hunger");
   return bb.increment("energy") >= FULL_ENERGY ? SUCCESS : RUNNING;
 }
 
@@ -58,12 +59,17 @@ function selector(label, children) {
   return makeView(label, "Selector", new bt.SelectorNode(children.map((c) => c.wrapper)), children);
 }
 
+function reactiveSelector(label, children) {
+  return makeView(label, "Reactive Selector", new bt.ReactiveSelectorNode(children.map((c) => c.wrapper)), children);
+}
+
 function sequence(label, children) {
   return makeView(label, "Sequence", new bt.SequenceNode(children.map((c) => c.wrapper)), children);
 }
 
-function buildRootView() {
-  return selector("root", [
+function buildRootView(isReactive) {
+  const rootSelector = isReactive ? reactiveSelector : selector;
+  return rootSelector("root", [
     sequence("eat when hungry", [task("is_hungry"), task("eat")]),
     sequence("sleep when tired", [task("is_tired"), task("sleep")]),
     task("wander"),
@@ -78,20 +84,22 @@ function forEachView(view, visit) {
 }
 
 // The child cursor is internal to a Composite; it is read here only to draw ▸.
+// A reactive Composite starts from its first child every tick, so it resumes nothing.
 function cursorIndex(view) {
   const cursor = view.node.childCursor;
-  if (!cursor) {
+  const isReactive = view.node instanceof bt.ReactiveSelectorNode;
+  if (!cursor || isReactive) {
     return -1;
   }
   const current = cursor.current();
   return view.children.findIndex((child) => child.wrapper === current);
 }
 
-function createSimulation() {
+function createSimulation(isReactive) {
   const blackboard = new Blackboard();
   blackboard.set("hunger", 0);
   blackboard.set("energy", FULL_ENERGY);
-  const rootView = buildRootView();
+  const rootView = buildRootView(isReactive);
   const tree = new bt.BehaviorTree(rootView.wrapper);
   tree.init(blackboard);
   return { blackboard, rootView, tree, tickCount: 0, lastStatus: null };
@@ -144,7 +152,8 @@ function setupPage() {
   const factsEl = document.getElementById("facts");
   const logEl = document.getElementById("log");
   const statusEl = document.getElementById("tick-status");
-  let sim = createSimulation();
+  const reactiveEl = document.getElementById("reactive");
+  let sim = createSimulation(reactiveEl.checked);
 
   function render() {
     treeEl.replaceChildren(renderNode(sim.rootView, false));
@@ -161,12 +170,15 @@ function setupPage() {
 
   const ticker = createTicker(step, document.getElementById("play"));
   document.getElementById("step").addEventListener("click", step);
-  document.getElementById("reset").addEventListener("click", () => {
+  function restart() {
     ticker.pause();
-    sim = createSimulation();
+    sim = createSimulation(reactiveEl.checked);
     logEl.replaceChildren();
     render();
-  });
+  }
+
+  document.getElementById("reset").addEventListener("click", restart);
+  reactiveEl.addEventListener("change", restart);
   render();
 }
 
