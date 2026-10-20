@@ -9,62 +9,62 @@ import dropecho.interop.AbstractFunc.Func_0;
 @:expose("goap.Action")
 class Action {
 	/** The Action's name. */
-	public var ActionType:String;
+	public var name:String;
 
-	/** The planning cost, unitless; the Planner picks the Plan with the lowest total. */
-	public var Cost:Float;
+	/** The planning Cost, unitless; the Planner picks the Plan with the lowest total. */
+	public var cost:Float;
 
-	/** The Condition names that must be true before this Action, used only for planning. */
-	public var Preconditions:Array<String> = new Array<String>();
+	/** The Condition names that must be true before this Action, used for planning. */
+	public var preconditions:Array<String> = new Array<String>();
 
-	/** The Condition names this Action makes true, used only for planning. */
-	public var Postconditions:Array<String> = new Array<String>();
+	/** The Condition names this Action makes true; used for planning, and as the done check when the Action has none of its own. */
+	public var postconditions:Array<String> = new Array<String>();
 
-	/** The function run on each update while this is the Plan's current Action. */
-	public var UpdateFunc:Action_1<Float>;
+	/** Run on each update while this is the Plan's current Action, with the time since the last update. */
+	public var onUpdate:Action_1<Float>;
 
 	/** A game-defined check for whether this Action can start; the library never calls it, and it defaults to always true. */
-	public var PreMatcher:Func_0<Bool> = () -> true;
+	public var startCheck:Func_0<Bool> = () -> true;
 
 	/** This Action's own done check, or null to treat the Action as done once all its postconditions are in the current world state. */
-	public var PostMatcher:Null<Func_0<Bool>> = null;
+	public var doneCheck:Null<Func_0<Bool>> = null;
 
 	/**
 	 * Creates an Action.
 	 *
-	 * @param actionType - The Action's name.
-	 * @param updateFunc - The function run on each update while this Action is current.
-	 * @param cost - The planning cost (unitless).
+	 * @param name - The Action's name.
+	 * @param onUpdate - Run on each update while this Action is current, with the time since the last update.
+	 * @param cost - The planning Cost (unitless).
 	 * @param preconditions - The Condition names needed before this Action, for planning; defaults to none.
-	 * @param postconditions - The Condition names this Action makes true, for planning; defaults to none.
-	 * @param preMatcher - The game-defined can-start check; defaults to always true and is not called by the library.
-	 * @param postMatcher - The Action's own done check; leave it out to treat the Action as done once its postconditions are in the current world state.
+	 * @param postconditions - The Condition names this Action makes true; defaults to none.
+	 * @param startCheck - The game-defined can-start check; defaults to always true and is not called by the library.
+	 * @param doneCheck - The Action's own done check; leave it out to treat the Action as done once its postconditions are in the current world state.
 	 */
 	public function new(
-		actionType:String,
-		updateFunc:Float->Void,
+		name:String,
+		onUpdate:Action_1<Float>,
 		cost:Float = 0,
 		?preconditions:Array<String>,
 		?postconditions:Array<String>,
-		?preMatcher:Func_0<Bool>,
-		?postMatcher:Func_0<Bool>
+		?startCheck:Func_0<Bool>,
+		?doneCheck:Func_0<Bool>
 	) {
-		ActionType = actionType;
-		UpdateFunc = updateFunc;
-		Cost = cost;
-		Preconditions = preconditions ?? Preconditions;
-		Postconditions = postconditions ?? Postconditions;
-		PreMatcher = preMatcher ?? PreMatcher;
-		PostMatcher = postMatcher;
+		this.name = name;
+		this.onUpdate = onUpdate;
+		this.cost = cost;
+		this.preconditions = preconditions ?? this.preconditions;
+		this.postconditions = postconditions ?? this.postconditions;
+		this.startCheck = startCheck ?? this.startCheck;
+		this.doneCheck = doneCheck;
 	}
 
 	/**
-	 * Asks `PreMatcher` whether this Action can start; the library never calls this.
+	 * Asks `startCheck` whether this Action can start; the library never calls this.
 	 *
 	 * @return True if the Action can start.
 	 */
-	inline public function preconditions_satisfied():Bool {
-		return PreMatcher();
+	inline public function canStart():Bool {
+		return startCheck();
 	}
 
 	/**
@@ -74,11 +74,11 @@ class Action {
 	 * @param worldState - The Condition names true in the game right now; only read when the Action has no done check of its own.
 	 * @return True if the Action is done.
 	 */
-	public function postconditions_satisfied(worldState:Array<String>):Bool {
-		if (PostMatcher != null) {
-			return PostMatcher();
+	public function isDone(worldState:Array<String>):Bool {
+		if (doneCheck != null) {
+			return doneCheck();
 		}
-		for (condition in Postconditions) {
+		for (condition in postconditions) {
 			var isMissing = worldState.indexOf(condition) < 0;
 			if (isMissing) {
 				return false;
@@ -88,11 +88,11 @@ class Action {
 	}
 
 	/**
-	 * Runs the Action's update function once.
+	 * Runs `onUpdate` once.
 	 *
-	 * @param delta_time - The time since the last update, in the game's time unit.
+	 * @param deltaTime - The time since the last update, in the game's time unit.
 	 */
-	inline public function update(delta_time:Float):Void {
-		UpdateFunc(delta_time);
+	inline public function update(deltaTime:Float):Void {
+		onUpdate(deltaTime);
 	}
 }

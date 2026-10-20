@@ -26,25 +26,25 @@ class PlanTests extends Test {
 	}
 
 	public function test_when_given_an_action_with_preconditions_unmatched_done_should_return_false() {
-		_action1.PostMatcher = () -> false;
+		_action1.doneCheck = () -> false;
 		_plan = new Plan([_action1]);
 		Assert.isFalse(_plan.isCompleted());
 	}
 
 	public function test_when_given_an_action_with_preconditions_matched_done_should_return_true() {
-		_action1.PostMatcher = () -> true;
+		_action1.doneCheck = () -> true;
 		_plan = new Plan([_action1]);
 		Assert.isTrue(_plan.isCompleted());
 	}
 
 	public function test_when_checking_done_on_an_updated_action() {
-		_action1.PostMatcher = () -> _actionDone;
+		_action1.doneCheck = () -> _actionDone;
 		_plan = new Plan([_action1]);
 		Assert.isFalse(_plan.isCompleted());
 	}
 
 	public function test_when_calling_update_it_should_call_update_on_the_current_action() {
-		_action1.PostMatcher = () -> _actionDone;
+		_action1.doneCheck = () -> _actionDone;
 		_plan = new Plan([_action1]);
 		_plan.update(0);
 		Assert.isTrue(_plan.isCompleted());
@@ -54,7 +54,7 @@ class PlanTests extends Test {
 		var action2Done = false;
 		var action2 = new Action("second", _ -> action2Done = true, 0, [], [], null, () -> action2Done);
 
-		_action1.PostMatcher = () -> _actionDone;
+		_action1.doneCheck = () -> _actionDone;
 		_plan = new Plan([_action1, action2]);
 
 		// First update: ticks action1 (_actionDone = true) → action1 completes → action2 is now current
@@ -71,7 +71,7 @@ class PlanTests extends Test {
 	public function test_length_decrements_as_actions_complete() {
 		var action2 = new Action("second", _ -> {}, 0, [], [], null, () -> true);
 
-		_action1.PostMatcher = () -> _actionDone;
+		_action1.doneCheck = () -> _actionDone;
 		_plan = new Plan([_action1, action2]);
 
 		Assert.equals(2, _plan.length);

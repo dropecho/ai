@@ -76,8 +76,8 @@ class Planner {
 			}
 
 			for (action in _availableActions) {
-				if (_hasAll(conditions, action.Preconditions)) {
-					var nextConditions = _withConditions(conditions, action.Postconditions);
+				if (_hasAll(conditions, action.preconditions)) {
+					var nextConditions = _withConditions(conditions, action.postconditions);
 					var nextKey = _stateKey(nextConditions);
 
 					var isNewWorldState = graph.nodes.exists(nextKey) == false;
@@ -86,7 +86,7 @@ class Planner {
 					}
 
 					var existing = graph.edgeData(current.label, nextKey);
-					var isCheapestSoFar = existing == null || existing.Cost > action.Cost;
+					var isCheapestSoFar = existing == null || existing.cost > action.cost;
 					if (isCheapestSoFar) {
 						graph.addUniEdge(current.label, nextKey, action);
 					}
@@ -99,7 +99,7 @@ class Planner {
 
 	private function _actionCost(graph:WorldStateGraph, from:WorldStateNode, to:WorldStateNode):Float {
 		var action = graph.edgeData(from.label, to.label);
-		return action != null ? action.Cost : Math.POSITIVE_INFINITY;
+		return action != null ? action.cost : Math.POSITIVE_INFINITY;
 	}
 
 	private function _cheapestGoal(goalNodes:Array<WorldStateNode>, search:SearchResult<Array<String>, Action>):Null<WorldStateNode> {

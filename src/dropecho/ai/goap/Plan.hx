@@ -89,11 +89,11 @@ class Plan {
 		var worldState:Null<Array<String>> = null;
 		while (_actions.length > 0) {
 			var action = _actions.peek();
-			var needsWorldState = action.PostMatcher == null && worldState == null;
+			var needsWorldState = action.doneCheck == null && worldState == null;
 			if (needsWorldState) {
 				worldState = _currentWorldState();
 			}
-			if (action.postconditions_satisfied(worldState)) {
+			if (action.isDone(worldState)) {
 				_actions.dequeue();
 			} else {
 				return false;
@@ -107,12 +107,12 @@ class Plan {
 	}
 
 	private function _requireWayToFinish(action:Action):Void {
-		var cannotTellWhenDone = action.PostMatcher == null && _worldState == null;
+		var cannotTellWhenDone = action.doneCheck == null && _worldState == null;
 		if (cannotTellWhenDone) {
-			throw 'Action "${action.ActionType}" has no done check and the Plan has no world state provider, so it can never tell when the Action is done. '
+			throw 'Action "${action.name}" has no done check and the Plan has no world state provider, so it can never tell when the Action is done. '
 				+ 'Either pass a world state provider, a function returning the Condition names true right now, to the Planner or Plan '
 				+ '(new Planner(goal, actions, () -> currentConditions())), or give the Action its own done check as the last constructor argument '
-				+ '(new Action("${action.ActionType}", update, cost, pre, post, null, () -> isFinished())).';
+				+ '(new Action("${action.name}", onUpdate, cost, preconditions, postconditions, null, () -> isFinished())).';
 		}
 	}
 }

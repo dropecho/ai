@@ -29,7 +29,7 @@ class PlannerTests extends Test {
 	}
 
 	public function test_when_given_a_matching_action_plan_should_be_generated() {
-		_action1.Postconditions = ["test_condition"];
+		_action1.postconditions = ["test_condition"];
 		_planner = new Planner(_goal, [_action1], () -> []);
 		_plan = _planner.generatePlan();
 
@@ -37,8 +37,8 @@ class PlannerTests extends Test {
 	}
 
 	public function test_when_given_two_matching_actions_plan_should_contain_lowest_cost_action() {
-		_action1.Postconditions = ["test_condition"];
-		_action2.Postconditions = ["test_condition"];
+		_action1.postconditions = ["test_condition"];
+		_action2.postconditions = ["test_condition"];
 		_planner = new Planner(_goal, [_action1, _action2], () -> []);
 		_plan = _planner.generatePlan();
 
@@ -147,7 +147,7 @@ class PlannerTests extends Test {
 
 	public function test_the_plan_uses_the_planners_world_state_provider() {
 		var worldState = [];
-		_action1.Postconditions = ["test_condition"];
+		_action1.postconditions = ["test_condition"];
 		_planner = new Planner(_goal, [_action1], () -> worldState);
 		_plan = _planner.generatePlan();
 		Assert.isFalse(_plan.isCompleted());
@@ -157,7 +157,7 @@ class PlannerTests extends Test {
 	}
 
 	public function test_an_action_without_a_done_check_and_no_world_state_provider_throws() {
-		_action1.Postconditions = ["test_condition"];
+		_action1.postconditions = ["test_condition"];
 		_planner = new Planner(_goal, [_action1]);
 		Assert.raises(() -> _planner.generatePlan());
 	}
