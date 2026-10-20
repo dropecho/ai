@@ -38,7 +38,7 @@ class ActionTests extends Test {
 	}
 
 	public function test_postconditions_satisfied_calls_post_matcher() {
-		_action.postconditions_satisfied();
+		_action.postconditions_satisfied([]);
 		Assert.equals(-2, _counter);
 	}
 
@@ -62,8 +62,19 @@ class ActionTests extends Test {
 		Assert.isTrue(a.preconditions_satisfied());
 	}
 
-	public function test_post_matcher_defaults_to_true() {
+	public function test_post_matcher_defaults_to_none() {
 		var a = new Action("t", _ -> {});
-		Assert.isTrue(a.postconditions_satisfied());
+		Assert.isNull(a.PostMatcher);
+	}
+
+	public function test_without_a_done_check_it_is_done_when_its_postconditions_are_in_the_world_state() {
+		var a = new Action("t", _ -> {}, 0, [], ["x", "y"]);
+		Assert.isFalse(a.postconditions_satisfied(["x"]));
+		Assert.isTrue(a.postconditions_satisfied(["y", "x", "z"]));
+	}
+
+	public function test_with_a_done_check_it_ignores_the_world_state() {
+		var a = new Action("t", _ -> {}, 0, [], ["x"], null, () -> false);
+		Assert.isFalse(a.postconditions_satisfied(["x"]));
 	}
 }

@@ -23,14 +23,14 @@ class PlannerTests extends Test {
 	}
 
 	public function test_when_given_no_matching_actions_plan_should_be_null() {
-		_planner = new Planner(_goal, [_action1]);
+		_planner = new Planner(_goal, [_action1], () -> []);
 		_plan = _planner.generatePlan();
 		Assert.equals(_plan, null);
 	}
 
 	public function test_when_given_a_matching_action_plan_should_be_generated() {
 		_action1.Postconditions = ["test_condition"];
-		_planner = new Planner(_goal, [_action1]);
+		_planner = new Planner(_goal, [_action1], () -> []);
 		_plan = _planner.generatePlan();
 
 		Assert.notNull(_plan);
@@ -39,7 +39,7 @@ class PlannerTests extends Test {
 	public function test_when_given_two_matching_actions_plan_should_contain_lowest_cost_action() {
 		_action1.Postconditions = ["test_condition"];
 		_action2.Postconditions = ["test_condition"];
-		_planner = new Planner(_goal, [_action1, _action2]);
+		_planner = new Planner(_goal, [_action1, _action2], () -> []);
 		_plan = _planner.generatePlan();
 
 		Assert.equals(_action2, _plan.currentAction);
@@ -48,7 +48,7 @@ class PlannerTests extends Test {
 	public function test_when_given_two_equal_cost_actions_plan_should_contain_the_first_given() {
 		var first = new Action("first", _ -> {}, 1, [], ["test_condition"]);
 		var second = new Action("second", _ -> {}, 1, [], ["test_condition"]);
-		_planner = new Planner(_goal, [first, second]);
+		_planner = new Planner(_goal, [first, second], () -> []);
 		_plan = _planner.generatePlan();
 
 		Assert.equals(first, _plan.currentAction);
@@ -58,7 +58,7 @@ class PlannerTests extends Test {
 		var actionA = new Action("get_weapon", deltaTime -> {}, 1, ["found_weapon"], ["has_weapon"]);
 		var actionB = new Action("find_weapon", deltaTime -> {}, 1, [], ["found_weapon"]);
 		var goal = new State(["has_weapon"]);
-		_planner = new Planner(goal, [actionA, actionB]);
+		_planner = new Planner(goal, [actionA, actionB], () -> []);
 		_plan = _planner.generatePlan();
 
 		Assert.notNull(_plan);
@@ -75,7 +75,7 @@ class PlannerTests extends Test {
 	public function test_when_goal_already_satisfied_by_start_state_plan_is_empty() {
 		// Goal with no preconditions is satisfied by the empty start state
 		var emptyGoal = new State([]);
-		_planner = new Planner(emptyGoal, [_action1]);
+		_planner = new Planner(emptyGoal, [_action1], () -> []);
 		_plan = _planner.generatePlan();
 		Assert.notNull(_plan);
 		Assert.equals(0, _plan.length);
@@ -91,7 +91,7 @@ class PlannerTests extends Test {
 		var step2 = new Action("step2", _ -> {}, 1, ["intermediate"], ["goal_met"]);
 		var goal = new State(["goal_met"]);
 
-		_planner = new Planner(goal, [directAction, step1, step2]);
+		_planner = new Planner(goal, [directAction, step1, step2], () -> []);
 		_plan = _planner.generatePlan();
 
 		Assert.notNull(_plan);
@@ -115,10 +115,57 @@ class PlannerTests extends Test {
 		var makeAB = new Action("make_a_comma_b", _ -> {}, 1, [], ["a,b"]);
 		var makeA = new Action("make_a", _ -> {}, 1, [], ["a"]);
 		var makeB = new Action("make_b", _ -> {}, 1, ["a"], ["b"]);
-		_planner = new Planner(new State(["a", "b"]), [makeAB, makeA, makeB]);
+		_planner = new Planner(new State(["a", "b"]), [makeAB, makeA, makeB], () -> []);
 		_plan = _planner.generatePlan();
 
 		Assert.notNull(_plan);
 		Assert.same([makeA, makeB], _plan.remainingActions());
+	}
+
+	public function test_plans_from_the_world_state_provider() {
+		var findWeapon = new Action("find_weapon", _ -> {}, 1, [], ["found_weapon"]);
+		var getWeapon = new Action("get_weapon", _ -> {}, 1, ["found_weapon"], ["has_weapon"]);
+		_planner = new Planner(new State(["has_weapon"]), [findWeapon, getWeapon], () -> ["found_weapon"]);
+		_plan = _planner.generatePlan();
+
+		Assert.same([getWeapon], _plan.remainingActions());
+	}
+
+	public function test_goal_already_true_in_the_world_state_gives_an_empty_plan() {
+		_planner = new Planner(_goal, [_action1], () -> ["test_condition"]);
+		_plan = _planner.generatePlan();
+
+		Assert.notNull(_plan);
+		Assert.equals(0, _plan.length);
+	}
+
+	public function test_without_a_world_state_provider_it_plans_from_the_empty_world_state() {
+		var needsKey = new Action("open_door", _ -> {}, 1, ["has_key"], ["test_condition"], null, () -> true);
+		_planner = new Planner(_goal, [needsKey]);
+		Assert.isNull(_planner.generatePlan());
+	}
+
+	public function test_the_plan_uses_the_planners_world_state_provider() {
+		var worldState = [];
+		_action1.Postconditions = ["test_condition"];
+		_planner = new Planner(_goal, [_action1], () -> worldState);
+		_plan = _planner.generatePlan();
+		Assert.isFalse(_plan.isCompleted());
+
+		worldState = ["test_condition"];
+		Assert.isTrue(_plan.isCompleted());
+	}
+
+	public function test_an_action_without_a_done_check_and_no_world_state_provider_throws() {
+		_action1.Postconditions = ["test_condition"];
+		_planner = new Planner(_goal, [_action1]);
+		Assert.raises(() -> _planner.generatePlan());
+	}
+
+	public function test_actions_with_their_own_done_checks_need_no_world_state_provider() {
+		var action = new Action("act", _ -> {}, 1, [], ["test_condition"], null, () -> false);
+		_planner = new Planner(_goal, [action]);
+		_plan = _planner.generatePlan();
+		Assert.isFalse(_plan.isCompleted());
 	}
 }

@@ -4,12 +4,16 @@ import dropecho.interop.AbstractArray;
 import dropecho.ds.Queue;
 
 /**
- * The Actions to run in order; each update runs the front Action and drops the ones whose done check is true.
+ * The Actions to run in order; each update runs the front Action and drops the ones that are done.
+ * An Action with its own done check is done when that check says so; one without is done when all
+ * its postconditions are in the world state the Plan's world state provider returns.
  */
 @:expose("goap.Plan")
 class Plan {
 	/** Internal queue of the remaining Actions; use `currentAction` or iterate the Plan instead. */
 	public var _actions(default, null):Queue<Action> = new Queue<Action>();
+
+	private var _worldState:Null<WorldStateProvider>;
 
 	/** The number of Actions left. */
 	public var length(get, null):Int;
@@ -26,13 +30,17 @@ class Plan {
 
 	/**
 	 * Creates a Plan that runs the given Actions in order.
+	 * Throws if an Action has no done check of its own and no world state provider is given.
 	 *
 	 * @param actions - The Actions in the order they run; defaults to none.
+	 * @param worldState - Returns the Condition names true in the game right now; needed by Actions without their own done check.
 	 */
-	public function new(actions:AbstractArray<Action> = null) {
+	public function new(actions:AbstractArray<Action> = null, ?worldState:WorldStateProvider) {
+		_worldState = worldState;
 		if (actions != null) {
 			// Queue.enqueueMany reverses order on JS (dropecho.ds 2.0.0), so enqueue one at a time.
 			for (action in actions) {
+				_requireWayToFinish(action);
 				_actions.enqueue(action);
 			}
 		}
@@ -73,18 +81,38 @@ class Plan {
 	}
 
 	/**
-	 * Drops finished Actions from the front, by their done check, and says whether none are left.
+	 * Drops finished Actions from the front and says whether none are left; asks the world state provider at most once.
 	 *
 	 * @return True if no Actions are left.
 	 */
 	public function isCompleted():Bool {
+		var worldState:Null<Array<String>> = null;
 		while (_actions.length > 0) {
-			if (_actions.peek().postconditions_satisfied()) {
+			var action = _actions.peek();
+			var needsWorldState = action.PostMatcher == null && worldState == null;
+			if (needsWorldState) {
+				worldState = _currentWorldState();
+			}
+			if (action.postconditions_satisfied(worldState)) {
 				_actions.dequeue();
 			} else {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	private function _currentWorldState():Array<String> {
+		return _worldState != null ? _worldState() : [];
+	}
+
+	private function _requireWayToFinish(action:Action):Void {
+		var cannotTellWhenDone = action.PostMatcher == null && _worldState == null;
+		if (cannotTellWhenDone) {
+			throw 'Action "${action.ActionType}" has no done check and the Plan has no world state provider, so it can never tell when the Action is done. '
+				+ 'Either pass a world state provider, a function returning the Condition names true right now, to the Planner or Plan '
+				+ '(new Planner(goal, actions, () -> currentConditions())), or give the Action its own done check as the last constructor argument '
+				+ '(new Action("${action.ActionType}", update, cost, pre, post, null, () -> isFinished())).';
+		}
 	}
 }

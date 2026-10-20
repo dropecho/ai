@@ -12,32 +12,37 @@ private typedef WorldStateGraph = Graph<Array<String>, Action>;
 private typedef WorldStateNode = IGraphNode<Array<String>, Action>;
 
 /**
- * Finds the cheapest Plan from the empty world state to a goal using the given Actions.
+ * Finds the cheapest Plan from the current world state to a goal using the given Actions.
  */
 @:expose("goap.Planner")
 class Planner {
 	private var _availableActions:AbstractArray<Action>;
 	private var _goal:State;
+	private var _worldState:Null<WorldStateProvider>;
 
 	/**
 	 * Creates a Planner for one goal.
 	 *
 	 * @param goal - The goal to reach.
 	 * @param availableActions - The Actions the Plan may use; the Planner never changes this list.
+	 * @param worldState - Returns the Condition names true in the game right now; planning starts there, or from the empty world state if left out. The Planner gives it to every Plan it returns.
 	 */
-	public function new(goal:State, availableActions:AbstractArray<Action>) {
+	public function new(goal:State, availableActions:AbstractArray<Action>, ?worldState:WorldStateProvider) {
 		_goal = goal;
 		_availableActions = availableActions;
+		_worldState = worldState;
 	}
 
 	/**
-	 * Plans from the empty world state to the goal by total Cost; among equal-cost Actions the first given wins.
+	 * Plans from the current world state to the goal by total Cost; among equal-cost Actions the first given wins.
+	 * Throws, like `Plan.new`, if the Plan would hold an Action that has no done check and there is no world state provider.
 	 *
 	 * @return The cheapest Plan, or null if the goal cannot be reached.
 	 */
 	public function generatePlan():Null<Plan> {
 		var graph = new WorldStateGraph();
-		var start = graph.createNode([], _stateKey([]));
+		var startConditions = _startConditions();
+		var start = graph.createNode(startConditions, _stateKey(startConditions));
 		var goalNodes = _expandWorldStates(graph, start);
 
 		var search = Search.dijkstra(start, (from, to) -> _actionCost(graph, from, to));
@@ -54,7 +59,7 @@ class Planner {
 	 * cheapest action between each pair.
 	 *
 	 * @param graph - The graph to fill.
-	 * @param start - The empty world state's node, already in the graph.
+	 * @param start - The starting world state's node, already in the graph.
 	 * @return The nodes that satisfy the goal, in the order they were reached.
 	 */
 	private function _expandWorldStates(graph:WorldStateGraph, start:WorldStateNode):Array<WorldStateNode> {
@@ -72,7 +77,7 @@ class Planner {
 
 			for (action in _availableActions) {
 				if (_hasAll(conditions, action.Preconditions)) {
-					var nextConditions = _applyPostconditions(conditions, action.Postconditions);
+					var nextConditions = _withConditions(conditions, action.Postconditions);
 					var nextKey = _stateKey(nextConditions);
 
 					var isNewWorldState = graph.nodes.exists(nextKey) == false;
@@ -115,7 +120,7 @@ class Planner {
 	 * Follows the search's path back from the goal to collect the actions in the order they run.
 	 *
 	 * @param goal - The goal node to reach.
-	 * @param start - The empty world state's node.
+	 * @param start - The starting world state's node.
 	 * @param graph - The expanded graph.
 	 * @param search - Dijkstra's result from `start`.
 	 * @return The plan, or null if the path is broken.
@@ -141,7 +146,12 @@ class Planner {
 			current = graph.nodes.get(prevLabel);
 		}
 
-		return new Plan(actions);
+		return new Plan(actions, _worldState);
+	}
+
+	private function _startConditions():Array<String> {
+		var current = _worldState != null ? _worldState() : [];
+		return _withConditions([], current);
 	}
 
 	/**
@@ -166,12 +176,12 @@ class Planner {
 		return true;
 	}
 
-	private function _applyPostconditions(conditions:Array<String>, postconditions:Array<String>):Array<String> {
+	private function _withConditions(conditions:Array<String>, added:Array<String>):Array<String> {
 		var result = conditions.copy();
-		for (post in postconditions) {
-			var isNew = result.indexOf(post) < 0;
+		for (condition in added) {
+			var isNew = result.indexOf(condition) < 0;
 			if (isNew) {
-				result.push(post);
+				result.push(condition);
 			}
 		}
 		return result;
