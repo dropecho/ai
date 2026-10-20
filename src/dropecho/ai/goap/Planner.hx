@@ -50,12 +50,12 @@ class Planner {
 			var current = frontier.dequeue();
 			var conditions = current.value;
 
-			if (_satisfiesGoal(conditions)) {
+			if (_hasAll(conditions, _goal.Preconditions)) {
 				goalNodes.push(current);
 			}
 
 			for (action in _availableActions) {
-				if (_preconditionsMet(conditions, action.Preconditions)) {
+				if (_hasAll(conditions, action.Preconditions)) {
 					var nextConditions = _applyPostconditions(conditions, action.Postconditions);
 					var nextKey = _stateKey(nextConditions);
 
@@ -132,16 +132,9 @@ class Planner {
 		return sorted.join(",");
 	}
 
-	private function _satisfiesGoal(conditions:Array<String>):Bool {
-		for (cond in _goal.Preconditions) {
-			if (conditions.indexOf(cond) < 0) return false;
-		}
-		return true;
-	}
-
-	private function _preconditionsMet(conditions:Array<String>, preconditions:Array<String>):Bool {
-		for (pre in preconditions) {
-			if (conditions.indexOf(pre) < 0) return false;
+	private function _hasAll(conditions:Array<String>, required:Array<String>):Bool {
+		for (condition in required) {
+			if (conditions.indexOf(condition) < 0) return false;
 		}
 		return true;
 	}
