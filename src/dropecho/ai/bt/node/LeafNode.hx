@@ -26,9 +26,16 @@ abstract class LeafNode implements Node {
 	}
 
 	/**
+	 * Called when the leaf was running and its parent abandons it; does nothing unless overridden.
+	 * Override it to stop work in progress (a move, an animation) and clear per-run state.
+	 */
+	public function halt():Void {}
+
+	/**
 	 * Runs one tick of the leaf.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return The leaf's Status for this tick.
 	 */
-	abstract public function execute():NODE_STATUS;
+	abstract public function execute(deltaTime:Float):NODE_STATUS;
 }

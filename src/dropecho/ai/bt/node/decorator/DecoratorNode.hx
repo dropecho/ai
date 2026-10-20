@@ -29,9 +29,17 @@ abstract class DecoratorNode implements Node {
 	}
 
 	/**
+	 * Halts the child; decorators that keep per-run state override this and call `super.halt()`.
+	 */
+	public function halt():Void {
+		this.child.halt();
+	}
+
+	/**
 	 * Runs the child for one tick and returns its changed Status.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return The decorator's Status for this tick.
 	 */
-	abstract public function execute():NODE_STATUS;
+	abstract public function execute(deltaTime:Float):NODE_STATUS;
 }

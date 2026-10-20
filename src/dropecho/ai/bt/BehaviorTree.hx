@@ -44,9 +44,17 @@ class BehaviorTree implements Node {
 	/**
 	 * Runs one tick of the tree from its root.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return The root's Status for this tick; RUNNING means call again next tick.
 	 */
-	public function execute():NODE_STATUS {
-		return this.child.execute();
+	public function execute(deltaTime:Float):NODE_STATUS {
+		return this.child.execute(deltaTime);
+	}
+
+	/**
+	 * Halts the root, for example when the game stops running this tree while it is RUNNING.
+	 */
+	public function halt():Void {
+		this.child.halt();
 	}
 }

@@ -17,10 +17,11 @@ class InverterNode extends DecoratorNode {
 	/**
 	 * Runs the child once.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return FAILURE if the child succeeded, SUCCESS if it failed, RUNNING if it is still running.
 	 */
-	public function execute():NODE_STATUS {
-		var status = this.child.execute();
+	public function execute(deltaTime:Float):NODE_STATUS {
+		var status = this.child.execute(deltaTime);
 
 		switch (status) {
 			case NODE_STATUS.SUCCESS:

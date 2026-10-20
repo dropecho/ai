@@ -41,11 +41,15 @@ function makeView(label, kind, node, children = []) {
     init(context) {
       node.init(context);
     },
-    execute() {
-      const status = node.execute();
+    execute(deltaTime) {
+      const status = node.execute(deltaTime);
       view.ran = true;
       view.status = status;
       return status;
+    },
+    halt() {
+      node.halt();
+      view.halted = true;
     },
   };
   return view;
@@ -108,8 +112,9 @@ function createSimulation(isReactive) {
 function tick(sim) {
   forEachView(sim.rootView, (view) => {
     view.ran = false;
+    view.halted = false;
   });
-  sim.lastStatus = sim.tree.execute();
+  sim.lastStatus = sim.tree.execute(1);
   sim.tickCount += 1;
   return sim.lastStatus;
 }
@@ -120,6 +125,9 @@ function ranTasks(rootView) {
     const isRanTask = view.ran && view.children.length === 0;
     if (isRanTask) {
       ran.push(`${view.label} ${statusName(view.status)}`);
+    }
+    if (view.halted) {
+      ran.push(`${view.label} halted`);
     }
   });
   return ran;
@@ -133,6 +141,9 @@ function renderNode(view, isCursor) {
   if (view.ran) {
     row.classList.add("ran");
     row.append(el("span", { class: `status status-${statusName(view.status)}`, text: statusName(view.status) }));
+  }
+  if (view.halted) {
+    row.append(el("span", { class: "status", text: "halted" }));
   }
   if (isCursor) {
     row.classList.add("cursor");

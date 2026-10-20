@@ -26,7 +26,7 @@ class SelectorNodeReactiveTests extends Test {
 	}
 
 	public function test_when_the_first_child_fails_it_should_run_the_second_child_in_the_same_tick() {
-		var status = this.node.execute();
+		var status = this.node.execute(0);
 
 		Assert.equals(NODE_STATUS.SUCCESS, status);
 		Assert.equals(1, highPriorityNode.executed);
@@ -36,8 +36,8 @@ class SelectorNodeReactiveTests extends Test {
 	public function test_when_a_child_is_running_it_should_recheck_earlier_children_each_tick() {
 		lowPriorityNode.execReturn = NODE_STATUS.RUNNING;
 
-		Assert.equals(NODE_STATUS.RUNNING, this.node.execute());
-		Assert.equals(NODE_STATUS.RUNNING, this.node.execute());
+		Assert.equals(NODE_STATUS.RUNNING, this.node.execute(0));
+		Assert.equals(NODE_STATUS.RUNNING, this.node.execute(0));
 
 		Assert.equals(2, highPriorityNode.executed);
 		Assert.equals(2, lowPriorityNode.executed);
@@ -45,12 +45,12 @@ class SelectorNodeReactiveTests extends Test {
 
 	public function test_when_a_higher_priority_child_starts_succeeding_it_should_switch_to_it_and_stop_ticking_the_running_child() {
 		lowPriorityNode.execReturn = NODE_STATUS.RUNNING;
-		this.node.execute();
+		this.node.execute(0);
 
 		highPriorityNode.execReturn = NODE_STATUS.SUCCESS;
 
-		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute());
-		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute());
+		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute(0));
+		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute(0));
 		Assert.equals(3, highPriorityNode.executed);
 		Assert.equals(1, lowPriorityNode.executed);
 	}
@@ -58,8 +58,8 @@ class SelectorNodeReactiveTests extends Test {
 	public function test_when_every_child_fails_it_should_fail_and_start_from_the_first_child_next_tick() {
 		lowPriorityNode.execReturn = NODE_STATUS.FAILURE;
 
-		Assert.equals(NODE_STATUS.FAILURE, this.node.execute());
-		Assert.equals(NODE_STATUS.FAILURE, this.node.execute());
+		Assert.equals(NODE_STATUS.FAILURE, this.node.execute(0));
+		Assert.equals(NODE_STATUS.FAILURE, this.node.execute(0));
 
 		Assert.equals(2, highPriorityNode.executed);
 		Assert.equals(2, lowPriorityNode.executed);
@@ -77,10 +77,10 @@ class SelectorNodeReactiveTests extends Test {
 
 	public function test_turning_reactive_off_resumes_the_running_child() {
 		lowPriorityNode.execReturn = NODE_STATUS.RUNNING;
-		this.node.execute();
+		this.node.execute(0);
 		this.node.reactive = false;
 
-		this.node.execute();
+		this.node.execute(0);
 
 		Assert.equals(1, highPriorityNode.executed);
 		Assert.equals(2, lowPriorityNode.executed);

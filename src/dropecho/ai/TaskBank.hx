@@ -3,8 +3,8 @@ package dropecho.ai;
 import dropecho.ai.bt.node.NODE_STATUS;
 import dropecho.interop.AbstractMap;
 
-/** A game-defined function that does a leaf's work: it gets the Blackboard and returns a Status. */
-typedef Task = Blackboard->NODE_STATUS;
+/** A game-defined function that does a leaf's work: it gets the Blackboard and the time since the last tick, and returns a Status. */
+typedef Task = (context:Blackboard, deltaTime:Float) -> NODE_STATUS;
 /** Tasks keyed by name. */
 typedef TaskMap = AbstractMap<String, Task>;
 
@@ -45,6 +45,6 @@ class TaskBank {
 		var registeredList = registeredNames.length == 0 ? "(none)" : registeredNames.join(", ");
 
 		return 'Unknown task "$name". Registered tasks: $registeredList.\n'
-			+ 'Register it first with: TaskBank.register("$name", context -> NODE_STATUS.SUCCESS)';
+			+ 'Register it first with: TaskBank.register("$name", (context, deltaTime) -> NODE_STATUS.SUCCESS)';
 	}
 }

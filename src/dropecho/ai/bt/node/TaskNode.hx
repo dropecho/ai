@@ -32,9 +32,15 @@ class TaskNode implements Node {
 	/**
 	 * Runs the Task once with the Blackboard.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return The Task's Status for this tick.
 	 */
-	public function execute():NODE_STATUS {
-		return action(this.context);
+	public function execute(deltaTime:Float):NODE_STATUS {
+		return action(this.context, deltaTime);
 	};
+
+	/**
+	 * Does nothing: a Task is a function with no state of its own. Use a LeafNode subclass for work that must be stopped.
+	 */
+	public function halt():Void {}
 }

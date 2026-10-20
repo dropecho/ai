@@ -26,7 +26,7 @@ class SequenceNodeReactiveTests extends Test {
 	}
 
 	public function test_when_the_first_child_succeeds_it_should_run_the_second_child_in_the_same_tick() {
-		var status = this.node.execute();
+		var status = this.node.execute(0);
 
 		Assert.equals(NODE_STATUS.SUCCESS, status);
 		Assert.equals(1, conditionNode.executed);
@@ -36,8 +36,8 @@ class SequenceNodeReactiveTests extends Test {
 	public function test_when_a_child_is_running_it_should_recheck_the_earlier_condition_each_tick() {
 		actionNode.execReturn = NODE_STATUS.RUNNING;
 
-		Assert.equals(NODE_STATUS.RUNNING, this.node.execute());
-		Assert.equals(NODE_STATUS.RUNNING, this.node.execute());
+		Assert.equals(NODE_STATUS.RUNNING, this.node.execute(0));
+		Assert.equals(NODE_STATUS.RUNNING, this.node.execute(0));
 
 		Assert.equals(2, conditionNode.executed);
 		Assert.equals(2, actionNode.executed);
@@ -45,18 +45,18 @@ class SequenceNodeReactiveTests extends Test {
 
 	public function test_when_the_earlier_condition_stops_holding_it_should_fail_without_ticking_the_running_child() {
 		actionNode.execReturn = NODE_STATUS.RUNNING;
-		this.node.execute();
+		this.node.execute(0);
 
 		conditionNode.execReturn = NODE_STATUS.FAILURE;
 
-		Assert.equals(NODE_STATUS.FAILURE, this.node.execute());
+		Assert.equals(NODE_STATUS.FAILURE, this.node.execute(0));
 		Assert.equals(2, conditionNode.executed);
 		Assert.equals(1, actionNode.executed);
 	}
 
 	public function test_when_it_succeeds_it_should_start_from_the_first_child_next_tick() {
-		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute());
-		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute());
+		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute(0));
+		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute(0));
 
 		Assert.equals(2, conditionNode.executed);
 		Assert.equals(2, actionNode.executed);

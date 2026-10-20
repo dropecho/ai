@@ -8,13 +8,13 @@ import dropecho.ai.bt.node.NODE_STATUS;
 
 class TaskBankTests extends Test {
 	public function setup() {
-		TaskBank.register("test_task", function(bb:Blackboard):NODE_STATUS {
+		TaskBank.register("test_task", function(bb:Blackboard, deltaTime:Float):NODE_STATUS {
 			return NODE_STATUS.SUCCESS;
 		});
 	}
 
 	public function test_register_and_get_returns_the_registered_task() {
-		TaskBank.register("test_task", function(bb:Blackboard):NODE_STATUS {
+		TaskBank.register("test_task", function(bb:Blackboard, deltaTime:Float):NODE_STATUS {
 			return NODE_STATUS.SUCCESS;
 		});
 		var task = TaskBank.get("test_task");
@@ -22,12 +22,12 @@ class TaskBankTests extends Test {
 	}
 
 	public function test_registered_task_is_callable() {
-		TaskBank.register("test_task", function(bb:Blackboard):NODE_STATUS {
+		TaskBank.register("test_task", function(bb:Blackboard, deltaTime:Float):NODE_STATUS {
 			return NODE_STATUS.SUCCESS;
 		});
 		var task = TaskBank.get("test_task");
 		var bb = new Blackboard();
-		var result = task(bb);
+		var result = task(bb, 0);
 		Assert.equals(NODE_STATUS.SUCCESS, result);
 	}
 
@@ -42,6 +42,6 @@ class TaskBankTests extends Test {
 		Assert.stringContains('Unknown task "unregistered_task"', message);
 		Assert.stringContains("Registered tasks: ", message);
 		Assert.stringContains("test_task", message);
-		Assert.stringContains('TaskBank.register("unregistered_task", context -> NODE_STATUS.SUCCESS)', message);
+		Assert.stringContains('TaskBank.register("unregistered_task", (context, deltaTime) -> NODE_STATUS.SUCCESS)', message);
 	}
 }

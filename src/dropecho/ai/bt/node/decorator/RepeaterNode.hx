@@ -17,10 +17,11 @@ class RepeaterNode extends DecoratorNode {
 	/**
 	 * Runs the child once, ignoring its Status.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return Always RUNNING.
 	 */
-	public function execute():NODE_STATUS {
-		child.execute();
+	public function execute(deltaTime:Float):NODE_STATUS {
+		child.execute(deltaTime);
 		return NODE_STATUS.RUNNING;
 	}
 }

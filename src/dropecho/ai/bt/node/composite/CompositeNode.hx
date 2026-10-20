@@ -7,12 +7,13 @@ using Lambda;
  *
  * Its child cursor keeps its place between ticks, so a running child is resumed next tick without re-running the children before it.
  * A reactive composite instead starts from its first child every tick, so a higher-priority child can take over from a running one;
- * the preempted child is not told, it is simply not ticked until it is reached again.
+ * the child it no longer reaches is halted.
  */
 abstract class CompositeNode implements Node {
 	private var children:Array<Node>;
 	private var childCursor:ChildCursor;
 	private var context:Blackboard;
+	private var runningChild:Null<Node> = null;
 
 	/** When true, every tick starts again from the first child instead of resuming a running one. */
 	public var reactive:Bool;
@@ -50,26 +51,36 @@ abstract class CompositeNode implements Node {
 	 * Runs children from the current one (the first one, when reactive) in the same tick, until a child returns the deciding status,
 	 * the last child finishes, or a child is running.
 	 *
+	 * A child that was running on an earlier tick and is not reached again (a reactive restart decided first, or a different child is
+	 * now running) is halted.
+	 *
 	 * @param decidingStatus - The child Status that ends the composite early: SUCCESS for a Selector, FAILURE for a Sequence.
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return The deciding status, or the last child's Status (both return to the first child), or RUNNING when a child is running (resumed next tick).
 	 */
-	private function runChildren(decidingStatus:NODE_STATUS):NODE_STATUS {
+	private function runChildren(decidingStatus:NODE_STATUS, deltaTime:Float):NODE_STATUS {
 		if (reactive) {
 			this.childCursor.reset();
 		}
 
 		while (true) {
-			var childStatus = this.childCursor
-				.current()
-				.execute();
+			var child = this.childCursor.current();
+			var childStatus = child.execute(deltaTime);
 
 			if (childStatus == NODE_STATUS.RUNNING) {
+				_haltRunningChildUnless(child);
+				runningChild = child;
 				return NODE_STATUS.RUNNING;
+			}
+
+			if (child == runningChild) {
+				runningChild = null;
 			}
 
 			var isDecided = childStatus == decidingStatus;
 			var isLastChild = this.childCursor.isOnLast();
 			if (isDecided || isLastChild) {
+				_haltRunningChildUnless(null);
 				this.childCursor.reset();
 				return childStatus;
 			}
@@ -79,9 +90,26 @@ abstract class CompositeNode implements Node {
 	}
 
 	/**
+	 * Halts the running child, if any, and returns to the first child.
+	 */
+	public function halt():Void {
+		_haltRunningChildUnless(null);
+		this.childCursor.reset();
+	}
+
+	private function _haltRunningChildUnless(stillRunning:Null<Node>):Void {
+		var isAbandoned = runningChild != null && runningChild != stillRunning;
+		if (isAbandoned) {
+			runningChild.halt();
+		}
+		runningChild = null;
+	}
+
+	/**
 	 * Runs children from the current one for this tick and moves the child cursor.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return The composite's Status for this tick.
 	 */
-	abstract public function execute():NODE_STATUS;
+	abstract public function execute(deltaTime:Float):NODE_STATUS;
 }

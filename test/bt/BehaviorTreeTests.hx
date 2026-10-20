@@ -17,7 +17,7 @@ class BehaviorTreeTests extends Test {
 	}
 
 	public function test_when_execute_is_called_on_the_tree_it_should_execute_the_root_node() {
-		this.tree.execute();
+		this.tree.execute(0);
 
 		Assert.equals(1, testNode.executed);
 	}

@@ -93,7 +93,7 @@ const tree = new bt.BehaviorTree(
   ]),
 );
 tree.init(blackboard);
-tree.execute(); // once per tick
+tree.execute(deltaTime); // once per tick
 
 // Reactive root: re-checks "eat when hungry" every tick, even while sleeping.
 new bt.SelectorNode([/* same children */], true); // reactive: true</code></pre>

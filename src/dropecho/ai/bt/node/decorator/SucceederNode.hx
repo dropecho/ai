@@ -17,10 +17,11 @@ class SucceederNode extends DecoratorNode {
 	/**
 	 * Runs the child once.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return RUNNING while the child is running, otherwise SUCCESS.
 	 */
-	public function execute():NODE_STATUS {
-		var status = child.execute();
+	public function execute(deltaTime:Float):NODE_STATUS {
+		var status = child.execute(deltaTime);
 
 		if (status == NODE_STATUS.RUNNING) {
 			return NODE_STATUS.RUNNING;

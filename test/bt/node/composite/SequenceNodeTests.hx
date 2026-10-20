@@ -25,8 +25,8 @@ class SequenceNodeTests extends Test {
 	public function test_when_execute_is_called_and_the_first_node_fails_it_should_not_call_the_second_node() {
 		children.unshift(new TestNode(NODE_STATUS.FAILURE));
 
-		Assert.equals(NODE_STATUS.FAILURE, this.node.execute());
-		Assert.equals(NODE_STATUS.FAILURE, this.node.execute());
+		Assert.equals(NODE_STATUS.FAILURE, this.node.execute(0));
+		Assert.equals(NODE_STATUS.FAILURE, this.node.execute(0));
 
 		Assert.equals(0, testNode.executed);
 	}
@@ -35,7 +35,7 @@ class SequenceNodeTests extends Test {
 		var tn2 = new TestNode();
 		children.unshift(tn2);
 
-		var status = this.node.execute();
+		var status = this.node.execute(0);
 
 		Assert.equals(NODE_STATUS.SUCCESS, status);
 		Assert.equals(1, tn2.executed);
@@ -46,9 +46,9 @@ class SequenceNodeTests extends Test {
 		var tn2 = new TestNode();
 		children.unshift(tn2);
 
-		this.node.execute();
-		this.node.execute();
-		this.node.execute();
+		this.node.execute(0);
+		this.node.execute(0);
+		this.node.execute(0);
 
 		Assert.equals(3, tn2.executed);
 		Assert.equals(3, testNode.executed);
@@ -59,8 +59,8 @@ class SequenceNodeTests extends Test {
 		children.unshift(tn2);
 		testNode.execReturn = NODE_STATUS.FAILURE;
 
-		Assert.equals(NODE_STATUS.FAILURE, this.node.execute());
-		Assert.equals(NODE_STATUS.FAILURE, this.node.execute());
+		Assert.equals(NODE_STATUS.FAILURE, this.node.execute(0));
+		Assert.equals(NODE_STATUS.FAILURE, this.node.execute(0));
 
 		Assert.equals(2, tn2.executed);
 		Assert.equals(2, testNode.executed);
@@ -71,15 +71,15 @@ class SequenceNodeTests extends Test {
 		children.unshift(tn2);
 		testNode.execReturn = NODE_STATUS.RUNNING;
 
-		Assert.equals(NODE_STATUS.RUNNING, this.node.execute());
-		Assert.equals(NODE_STATUS.RUNNING, this.node.execute());
+		Assert.equals(NODE_STATUS.RUNNING, this.node.execute(0));
+		Assert.equals(NODE_STATUS.RUNNING, this.node.execute(0));
 
 		Assert.equals(1, tn2.executed);
 		Assert.equals(2, testNode.executed);
 
 		testNode.execReturn = NODE_STATUS.SUCCESS;
 
-		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute());
+		Assert.equals(NODE_STATUS.SUCCESS, this.node.execute(0));
 		Assert.equals(1, tn2.executed);
 		Assert.equals(3, testNode.executed);
 	}

@@ -18,9 +18,10 @@ class SelectorNode extends CompositeNode {
 	/**
 	 * Runs children from the current one in the same tick: a failed child moves on to the next child, and a running child is resumed next tick.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return SUCCESS when a child succeeds, FAILURE when every child from the current one fails (both return to the first child), RUNNING when a child is running.
 	 */
-	public function execute():NODE_STATUS {
-		return runChildren(NODE_STATUS.SUCCESS);
+	public function execute(deltaTime:Float):NODE_STATUS {
+		return runChildren(NODE_STATUS.SUCCESS, deltaTime);
 	}
 }

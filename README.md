@@ -41,7 +41,7 @@ bb.keys();              // ["hunger"]
 ## Behavior tree
 
 Register Tasks by name, build the tree from nodes, give it a Blackboard, then call
-`execute()` once per tick. Each node returns `SUCCESS`, `FAILURE` or `RUNNING`.
+`execute(deltaTime)` once per tick, passing the time since the last tick. Each node returns `SUCCESS`, `FAILURE` or `RUNNING`.
 
 ```haxe
 import dropecho.ai.Blackboard;
@@ -51,8 +51,8 @@ import dropecho.ai.bt.node.NODE_STATUS;
 import dropecho.ai.bt.node.TaskNode;
 import dropecho.ai.bt.node.composite.SequenceNode;
 
-TaskBank.register("is_hungry", bb -> bb.get("hunger") > 2 ? NODE_STATUS.SUCCESS : NODE_STATUS.FAILURE);
-TaskBank.register("eat", bb -> {
+TaskBank.register("is_hungry", (bb, dt) -> bb.get("hunger") > 2 ? NODE_STATUS.SUCCESS : NODE_STATUS.FAILURE);
+TaskBank.register("eat", (bb, dt) -> {
 	bb.decrement("hunger");
 	return NODE_STATUS.SUCCESS;
 });
@@ -60,7 +60,7 @@ TaskBank.register("eat", bb -> {
 var tree = new BehaviorTree(new SequenceNode([new TaskNode("is_hungry"), new TaskNode("eat")]));
 tree.init(new Blackboard());
 
-var status = tree.execute(); // call every tick
+var status = tree.execute(dt); // call every tick with the time since the last one
 ```
 
 Register a Task before creating a `TaskNode` that names it. Composites (`SelectorNode`,
@@ -70,7 +70,8 @@ child returns `RUNNING`; a `RUNNING` child is resumed next tick. Pass `reactive:
 tick instead, so higher-priority children and earlier conditions are re-checked while a later child
 is `RUNNING`; a preempted child is simply not ticked again until it is reached. Decorators (`InverterNode`, `RepeaterNode`,
 `RepeatUntilNode`, `SucceederNode`) wrap a single child. For leaves that are classes
-rather than functions, extend `LeafNode` and implement `execute()` (it is abstract; no `override`).
+rather than functions, extend `LeafNode` and implement `execute(deltaTime)` (it is abstract; no `override`), and override `halt()` to
+stop work in progress when a parent abandons the leaf while it is `RUNNING`.
 
 ## State machine
 

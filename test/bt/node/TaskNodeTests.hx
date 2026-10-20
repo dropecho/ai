@@ -9,7 +9,7 @@ import dropecho.ai.bt.node.NODE_STATUS;
 
 class TaskNodeTests extends Test {
 	public function setup() {
-		TaskBank.register("task_node_test", function(bb:Blackboard):NODE_STATUS {
+		TaskBank.register("task_node_test", function(bb:Blackboard, deltaTime:Float):NODE_STATUS {
 			return NODE_STATUS.SUCCESS;
 		});
 	}
@@ -18,20 +18,20 @@ class TaskNodeTests extends Test {
 		var node = new TaskNode("task_node_test");
 		var bb = new Blackboard();
 		node.init(bb);
-		var result = node.execute();
+		var result = node.execute(0);
 		Assert.equals(NODE_STATUS.SUCCESS, result);
 	}
 
 	public function test_init_provides_context_to_task() {
 		var contextWasNotNull = false;
-		TaskBank.register("task_node_context_test", function(bb:Blackboard):NODE_STATUS {
+		TaskBank.register("task_node_context_test", function(bb:Blackboard, deltaTime:Float):NODE_STATUS {
 			contextWasNotNull = (bb != null);
 			return NODE_STATUS.SUCCESS;
 		});
 		var node = new TaskNode("task_node_context_test");
 		var bb = new Blackboard();
 		node.init(bb);
-		node.execute();
+		node.execute(0);
 		Assert.isTrue(contextWasNotNull);
 	}
 

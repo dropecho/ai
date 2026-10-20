@@ -17,10 +17,11 @@ class RepeatUntilNode extends DecoratorNode {
 	/**
 	 * Runs the child once.
 	 *
+	 * @param deltaTime - The time since the last tick, in the game's time unit.
 	 * @return SUCCESS if the child failed, otherwise RUNNING.
 	 */
-	public function execute():NODE_STATUS {
-		var status = child.execute();
+	public function execute(deltaTime:Float):NODE_STATUS {
+		var status = child.execute(deltaTime);
 
 		var keepRepeating = status == NODE_STATUS.SUCCESS || status == NODE_STATUS.RUNNING;
 		if (keepRepeating) {
