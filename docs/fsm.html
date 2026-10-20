@@ -1,60 +1,104 @@
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <style>
-      #container {
-        display: flex;
-        flex-direction: row;
-      }
-      #blackboard {
-        table-layout: auto;
-      }
-      #blackboard table,
-      #blackboard th,
-      #blackboard td {
-        border-spacing: 0px;
-        border-collapse: collapse;
-        border: thin solid black;
-        padding: 5px;
-        padding-right: 20px;
-        margin: 0;
-      }
-      .edge,
-      .edge path,
-      .node * {
-        transition: stroke 0.3s;
-        stroke: black;
-      }
-      .edge.active,
-      .edge.active path,
-      .node.active * {
-        stroke: red;
-      }
-
-      .edge polygon {
-        transition: stroke 0.2s, fill 0.2s;
-        stroke: black;
-        fill: black;
-      }
-
-      .edge.active polygon {
-        stroke: red;
-        fill: red;
-      }
-    </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>State machine · dropecho.ai</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="container">
-      <div id="blackboard"></div>
-      <div id="d3"></div>
-    </div>
+    <header class="site-header">
+      <nav aria-label="Site">
+        <a class="brand" href="index.html">dropecho.ai</a>
+        <a href="behavior-tree.html">Behavior tree</a>
+        <a href="fsm.html" aria-current="page">State machine</a>
+        <a href="goap.html">Goal planner</a>
+        <a href="utility.html">Utility</a>
+        <a href="api/index.html">API</a>
+        <a href="https://github.com/dropecho/ai">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>State machine</h1>
+      <p class="lede">
+        An agent wanders until it is hungry or exhausted, then eats or sleeps. Danger is an
+        any-transition: from whatever State is current, it moves to <code>flee</code>.
+      </p>
+      <p>
+        Each tick the current State ticks first, then the state machine takes the first Transition
+        whose Condition is true, checking any-transitions before the current State's own. The State
+        graph below is drawn from <code>fsm.toDot()</code>.
+      </p>
+
+      <div class="controls" role="group" aria-label="State machine controls">
+        <button id="step" class="primary">Step</button>
+        <button id="play" aria-pressed="false">Play</button>
+        <button id="reset">Reset</button>
+        <button id="danger" aria-pressed="false">Danger: off</button>
+        <span id="tick-status" aria-live="polite"></span>
+      </div>
+
+      <section class="panel" aria-labelledby="graph-heading">
+        <h2 id="graph-heading" class="h3">State graph</h2>
+        <p class="muted">Filled: the current State. Blue edge or node: the Transition about to be taken.</p>
+        <div id="graph" role="img" aria-label="State graph of the state machine"></div>
+      </section>
+
+      <div class="grid">
+        <section class="panel" aria-labelledby="bb-heading">
+          <h2 id="bb-heading" class="h3">Blackboard</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th scope="col">Fact</th><th scope="col">Value</th></tr>
+              </thead>
+              <tbody id="facts"></tbody>
+            </table>
+          </div>
+          <h3 class="spaced">Transitions</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th scope="col">From</th><th scope="col">To</th><th scope="col">Condition</th></tr>
+              </thead>
+              <tbody id="transitions"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="log-heading">
+          <h2 id="log-heading" class="h3">Events</h2>
+          <ol id="log" class="log"></ol>
+        </section>
+      </div>
+
+      <h2>The code</h2>
+      <pre><code>const wander = {
+  getName: () =&gt; "wander",
+  onEnter() {},
+  onExit() {},
+  tick() {
+    blackboard.increment("hunger");
+    blackboard.decrement("energy");
+  },
+};
+// ... eat, sleep, flee
+
+const machine = new fsm.FSM();
+machine.addTransition(wander, eat, () =&gt; blackboard.get("hunger") &gt; 2);
+machine.addAnyTransition(flee, () =&gt; blackboard.get("danger") &gt; 0 &amp;&amp; machine.getCurrentState() !== flee);
+machine.changeToState(wander); // required before the first tick
+machine.tick();</code></pre>
+      <p><a href="https://github.com/dropecho/ai/blob/main/docs/fsm.js">Full source of this demo</a></p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@2.20.0/dist/graphviz.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-graphviz@5.6.0/build/d3-graphviz.min.js"></script>
+    <script src="dropecho.ai.js"></script>
+    <script src="common.js"></script>
+    <script src="fsm.js"></script>
   </body>
-  <script
-    src="https://unpkg.com/@hpcc-js/wasm/dist/index.min.js"
-    type="javascript/worker"
-  ></script>
-  <script src="https://unpkg.com/d3"></script>
-  <script src="https://unpkg.com/d3-graphviz"></script>
-  <script src="dropecho.ai.js"></script>
-  <script src="fsm.js"></script>
-  <html></html>
 </html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Utility · dropecho.ai</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="Site">
+        <a class="brand" href="index.html">dropecho.ai</a>
+        <a href="behavior-tree.html">Behavior tree</a>
+        <a href="fsm.html">State machine</a>
+        <a href="goap.html">Goal planner</a>
+        <a href="utility.html" aria-current="page">Utility</a>
+        <a href="api/index.html">API</a>
+        <a href="https://github.com/dropecho/ai">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Utility</h1>
+      <p class="lede">
+        A Motive is a named need with a value; the lower the value, the more urgent. The Utility
+        agent picks the most important Motive, the one with the lowest value.
+      </p>
+      <p>
+        Drag the sliders, or press Play to let every Motive decay each tick. With
+        “Act on the most important Motive” on, the agent tops up whichever Motive it picked.
+      </p>
+
+      <div class="controls" role="group" aria-label="Utility controls">
+        <button id="step" class="primary">Step</button>
+        <button id="play" aria-pressed="false">Play</button>
+        <button id="reset">Reset</button>
+        <label><input id="act" type="checkbox" checked /> Act on the most important Motive</label>
+      </div>
+
+      <div class="grid">
+        <section class="panel" aria-labelledby="motives-heading">
+          <h2 id="motives-heading" class="h3">Motives</h2>
+          <div id="motives"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="pick-heading">
+          <h2 id="pick-heading" class="h3">Most important Motive now</h2>
+          <p class="callout" id="pick" aria-live="polite"></p>
+          <p class="muted">From <code>agent.getMostImportantMotive()</code>.</p>
+          <h3 class="spaced">Ticks</h3>
+          <ol id="log" class="log"></ol>
+        </section>
+      </div>
+
+      <h2>The code</h2>
+      <pre><code>const agent = new utility.UtilityAgent();
+agent.motives.push(new utility.Motive("hunger", 0.8));
+agent.motives.push(new utility.Motive("thirst", 0.6));
+
+for (const motive of agent.motives) {
+  motive.value = Math.max(0, motive.value - decay[motive.name]);
+}
+agent.getMostImportantMotive().name; // the lowest value</code></pre>
+      <p><a href="https://github.com/dropecho/ai/blob/main/docs/utility.js">Full source of this demo</a></p>
+    </main>
+
+    <script src="dropecho.ai.js"></script>
+    <script src="common.js"></script>
+    <script src="utility.js"></script>
+  </body>
+</html>
