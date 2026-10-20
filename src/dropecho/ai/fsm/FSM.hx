@@ -117,7 +117,8 @@ class FSM {
 			nodeOutput = "any\n";
 			for (any in _anyTransitions) {
 				edgeOutput += '\n any -> ${any.to.getName()}';
-				if (activeTransitionName == any.to.getName() && _anyTransitions.contains(activeTransition)) {
+				var isActiveAnyTransition = activeTransitionName == any.to.getName() && _anyTransitions.contains(activeTransition);
+				if (isActiveAnyTransition) {
 					edgeOutput += '[class="active"]';
 				}
 			}
@@ -136,7 +137,8 @@ class FSM {
 			}
 			edgeOutput = edgeOutput + '\n $key -> $key';
 
-			if (_currentState != null && key == _currentState.getName()) {
+			var isCurrentState = _currentState != null && key == _currentState.getName();
+			if (isCurrentState) {
 				if (activeTransition == null) {
 					nodeOutput += '[class="active"]';
 					edgeOutput += '[class="active"]';

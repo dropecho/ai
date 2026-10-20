@@ -9,7 +9,8 @@ class RepeatUntilNode extends DecoratorNode {
 	public function execute():NODE_STATUS {
 		var status = child.execute();
 
-		if (status == NODE_STATUS.SUCCESS || status == NODE_STATUS.RUNNING) {
+		var keepRepeating = status == NODE_STATUS.SUCCESS || status == NODE_STATUS.RUNNING;
+		if (keepRepeating) {
 			return NODE_STATUS.RUNNING;
 		}
 
