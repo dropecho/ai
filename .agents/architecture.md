@@ -14,7 +14,7 @@ src/dropecho/ai/
 │   └── node/
 │       ├── Node.hx            # Node interface + IExecutable<T>
 │       ├── NODE_STATUS.hx     # Status enum abstract: SUCCESS, FAILURE, RUNNING
-│       ├── LeafNode.hx        # Base class for game-defined leaves (execute must be overridden)
+│       ├── LeafNode.hx        # Abstract base for game-defined leaves (subclasses implement execute)
 │       ├── TaskNode.hx        # Leaf that runs a registered Task
 │       ├── composite/
 │       │   ├── CompositeNode.hx   # Base: children + child cursor
@@ -37,9 +37,6 @@ src/dropecho/ai/
 └── utility/
     └── Motive.hx              # Motive and UtilityAgent
 
-src/dropecho/util/
-├── CurrentIterator.hx         # Child cursor used by CompositeNode
-└── NotImplementedException.hx # Thrown by base nodes' execute()
 ```
 
 ## Behavior Tree Execution Flow
@@ -92,7 +89,7 @@ var done = plan.update(dt);
 ## Key Design Patterns
 
 1. **`NODE_STATUS` over booleans** — every node returns a three-value Status; RUNNING enables multi-tick behaviours.
-2. **`CurrentIterator` for resumable composite traversal** — a composite keeps its position across ticks.
+2. **`ChildCursor` for resumable composite traversal** — a composite keeps its position across ticks.
 3. **`TaskBank` as indirection** — tree structure is decoupled from behaviour; Tasks are registered globally by name.
 4. **`AbstractMap` / `AbstractArray` / `AbstractFunc` in public APIs** — JS callers pass plain objects, C# callers native types.
-5. **Abstract base nodes** — `CompositeNode` and `DecoratorNode` are abstract classes, so a missing `execute()` is a compile error; `LeafNode.execute()` throws `NotImplementedException` until overridden.
+5. **Abstract base nodes** — `CompositeNode`, `DecoratorNode` and `LeafNode` are abstract classes, so a missing `execute()` is a compile error.

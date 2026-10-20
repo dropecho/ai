@@ -55,8 +55,7 @@ Simple motive-based scoring for choosing the highest-priority behavior.
 
 ### Shared Utilities
 
-- **`CurrentIterator<T>`** — array iterator that tracks current position; supports `reset()` and `current()` without advancing
-- **`NotImplementedException`** — extends `haxe.Exception`; thrown by abstract base nodes
+- **`ChildCursor`** (`bt.node.composite`) — a composite's position in its children: `current()`, `advance()`, `isOnLast()`, `reset()`
 
 ## Package Metadata
 

@@ -20,12 +20,12 @@ in code. Nothing here is implemented until approved. Terms are from
 |---|---|---|---|---|---|
 | M1 | Model change | Call the GOAP `State` a Goal | Ends the clash with the state machine's State | — | open |
 | M2 | Model change | Make World state an explicit value in the Planner instead of a comma-joined string | The planner reads in its own terms | — | done |
-| M3 | Model change | Make the child cursor part of Composites, with cursor names instead of iterator ones | `hasNext`/`next` stop pretending to be a Haxe Iterator | — | open |
+| M3 | Model change | Make the child cursor part of Composites, with cursor names instead of iterator ones | `hasNext`/`next` stop pretending to be a Haxe Iterator | — | done |
 | R5 | Refactor [simplify] | Each planner graph node holds its World state's condition list, so the string is never split back apart | M2; removes `_parseState` | — | done |
 | R20 | Refactor [readability] | Split `generatePlan` into named steps (expand world states, find cheapest goal, collect actions), replacing its four step comments | M2; the 75-line method reads as four lines | R5 | done |
 | R6 | Refactor [reuse] | Merge `_satisfiesGoal` and `_preconditionsMet`, which are the same "has all these conditions" check | One check, one name | — | done |
 | R7 | Refactor [simplify] | Drop the constructor's sort-and-copy; the cheapest-edge check already keeps the cheapest Action | Removes a `cast` and a duplicate rule | T8 | done |
-| A3 | API change | Move `CurrentIterator` into the composite package as a child cursor with `advance()` / `isOnLast()` | M3; a `for` loop over it today silently skips the last child | — | open |
+| A3 | API change | Move `CurrentIterator` into the composite package as a child cursor with `advance()` / `isOnLast()` | M3; a `for` loop over it today silently skips the last child | — | done |
 | A1 | API change | Rename GOAP `State` to `Goal` (breaking) | M1 | — | open |
 | R10 | Refactor [reuse] | Selector and Sequence are mirror images; share one "run current child, stop on X" step in Composite | One copy of the cursor rules | T6, B10 | done |
 | R11 | Refactor [pattern] | Make CompositeNode and DecoratorNode Haxe `abstract class`es so a missing `execute` is a compile error, not a runtime throw | Compiler enforces what convention does now | — | done |
@@ -41,12 +41,12 @@ in code. Nothing here is implemented until approved. Terms are from
 | B12 | Bug (question) | State machine transitions are keyed by State name, so two States with one name (two instances of one class, as in the tests) share transitions silently | Removes a trap | — | done: keyed by the State object |
 | B17 | Bug (question) | An Action's default done check is always true, so a Plan drops every remaining Action after its first update; should the default be "not done", or should a done check be required? | Plans built with defaults run fully | — | open |
 | B18 | Bug | `Plan.currentAction` and `Plan.length` are Haxe properties, so in JS they read as `undefined` (only `get_currentAction()` works) and a Plan isn't `for…of`-iterable; A4's accessors only help Haxe callers | JS users can read a Plan | A4 | open |
-| B19 | Bug (question) | An any-transition whose target is the current State re-fires every tick (onExit/onEnter again) while its Condition is true; skip transitions to the current State? | No surprise re-entry | — | open |
-| B20 | Bug | `toDot()` quirks: current State only marked when no Transition is pending, a self-loop on every State, target-only States not declared, names unquoted (spaces/hyphens break DOT) | A correct State graph | — | open |
-| A10 | API change | Blackboard can't list its facts, so tools must know keys in advance (the old FSM demo read a field that no longer exists) | Debug views and demos | — | open |
-| B21 | Bug (question) | With equal values, the most important Motive is the later one; should it be the first? | Predictable ties | — | open |
-| B22 | Bug (upstream) | `dropecho.ds` Dijkstra keys its distance maps by `Std.string(node)` on JS (AbstractMap is a plain object), which dumps each node's fields; slow, and only distinct because the label is in the dump | Planner speed and safety | — | open |
-| B16 | Bug (upstream) | Fix `Queue.enqueueMany` in dropecho.ds (adds to the front on JS), then remove the workaround in `Plan.new` | Removes a workaround | — | open |
+| B19 | Bug (question) | An any-transition whose target is the current State re-fires every tick (onExit/onEnter again) while its Condition is true; skip transitions to the current State? | No surprise re-entry | — | done |
+| B20 | Bug | `toDot()` quirks: current State only marked when no Transition is pending, a self-loop on every State, target-only States not declared, names unquoted (spaces/hyphens break DOT) | A correct State graph | — | done |
+| A10 | API change | Blackboard can't list its facts, so tools must know keys in advance (the old FSM demo read a field that no longer exists) | Debug views and demos | — | done |
+| B21 | Bug (question) | With equal values, the most important Motive is the later one; should it be the first? | Predictable ties | — | done |
+| B22 | Bug (upstream) | `dropecho.ds` Dijkstra keys its distance maps by `Std.string(node)` on JS (AbstractMap is a plain object), which dumps each node's fields; slow, and only distinct because the label is in the dump | Planner speed and safety | — | fixed on dropecho.ds branch `fix/js-queue-order-and-node-keys` (unreleased, 2.0.1); then bump here and remove the `Plan.new` workaround |
+| B16 | Bug (upstream) | Fix `Queue.enqueueMany` in dropecho.ds (adds to the front on JS), then remove the workaround in `Plan.new` | Removes a workaround | — | fixed on dropecho.ds branch `fix/js-queue-order-and-node-keys` (unreleased, 2.0.1); then bump here and remove the `Plan.new` workaround |
 | A2 | API change | GOAP and Utility aren't exported in the CJS bundle, while dropecho.ds's Graph/GraphNode/Heap/Queue/Search now are, as top-level names | JS users can reach the planner | — | done |
 | A4 | API change | Replace the public `Plan._actions` with `currentAction` and `iterator()`; tests stop reaching into it (finishes R4) | Plan owns its queue | — | partly done: accessors added, tests moved; making `_actions` private waits for the next major |
 | D1 | Docs | `architecture.md` is stale (Int blackboard, stub LeafNode, backward-chaining planner) and repeats the concepts; point it at the domain model and keep only the flows | One description of the system | — | done |
@@ -55,14 +55,14 @@ in code. Nothing here is implemented until approved. Terms are from
 | A5 | API change · low value | GOAP naming: PascalCase fields and snake_case methods (`preconditions_satisfied`, `delta_time`) unlike the rest; conventions.md asks for the PascalCase fields | Consistency, only in a major | — | open |
 | A6 | API change · low value | `Action.new` takes `Float->Void` while the field is `Action_1<Float>` | Matches the interop convention | — | open |
 | A7 | API change · low value | Goal `Relevance` is stored but nothing uses it; remove it or use it | No dead field | — | open |
-| A8 | API change · low value | Make `LeafNode` abstract too (it is exported and subclassed) | Same as R11 for leaves | R11 | open |
-| A9 | API change · low value | `BehaviorTree.new(root = null)` defaults a parameter that it then rejects; make it required | Signature says the rule | — | open |
+| A8 | API change · low value | Make `LeafNode` abstract too (it is exported and subclassed) | Same as R11 for leaves | R11 | done |
+| A9 | API change · low value | `BehaviorTree.new(root = null)` defaults a parameter that it then rejects; make it required | Signature says the rule | — | done |
 | B13 | Bug · low value | A condition name containing `,` collides in the World state key | Removes a trap | R5 | open |
 | B14 | Bug (question) · low value | `Plan.update` ticks the front Action once even if its done check is already true | — | — | open |
-| B15 | Bug (question) · low value | `toDot()` asks every Condition to mark the active edge, so drawing runs game callbacks | — | — | open |
-| R12 | Refactor [readability] · low value | Shorten `FSM.addTransition`'s get-or-create | Shorter | — | open |
+| B15 | Bug (question) · low value | `toDot()` asks every Condition to mark the active edge, so drawing runs game callbacks | — | — | kept and documented in `toDot` |
+| R12 | Refactor [readability] · low value | Shorten `FSM.addTransition`'s get-or-create | Shorter | — | done |
 | R13 | Refactor [readability] · low value | Remove unused imports and `using Lambda` | Less noise | — | done |
-| R14 | Refactor [readability] · low value | Build `toDot()` output from lists instead of string concatenation with stray indentation | Readable DOT | — | open |
+| R14 | Refactor [readability] · low value | Build `toDot()` output from lists instead of string concatenation with stray indentation | Readable DOT | — | done |
 | T7 | Test [readability] · low value | Remove `trace(util)` and fix swapped `Assert.equals(expected, actual)` arguments | Clear failure messages | — | done |
 | T9 | Test [consistency] · low value | Move `test/UtilityTests.hx` to `test/utility/` like the others | P21 | — | done |
 | B1–B8, R1–R4, T1–T5 | Earlier rounds | See "Done in earlier rounds" | — | — | done |

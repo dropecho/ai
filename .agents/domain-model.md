@@ -16,9 +16,9 @@ blackboard of facts.
 
 ```
 Behavior tree:  Blackboard → BehaviorTree.init → every node     ;  tick: execute() → root → … → task → Status
-State machine:  tick() → current State.tick() → first true Condition (any-transitions first) → change State
+State machine:  tick() → current State.tick() → first true Condition among Transitions to another State (any-transitions first) → change State
 Goal planner:   Goal + Actions → Planner → Plan  ;  tick: Plan.update(dt) → front Action.update(dt)
-Utility:        Motives → UtilityAgent → most important Motive (lowest value)
+Utility:        Motives → UtilityAgent → most important Motive (lowest value, first on a tie)
 ```
 
 The four modules do not know about each other. Behavior tree and state machine know the
@@ -55,6 +55,8 @@ no State --changeToState--> State S --tick: S.tick(), then a Condition is true--
 ```
 
 Any-transitions are checked before S's own transitions; the first true Condition wins.
+Transitions whose target is S itself are skipped (their Condition isn't asked), so `tick`
+never re-enters the current State; only an explicit `changeToState(S)` re-runs onExit/onEnter.
 
 ### Plan
 
@@ -69,10 +71,13 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 | Invariant | Enforced by |
 |---|---|
 | A missing Blackboard fact reads as 0 | `Blackboard.get` (also used by `increment` / `decrement`) |
-| A behavior tree has a root | `BehaviorTree.new` throws |
+| A behavior tree has a root | `BehaviorTree.new` requires `root` and throws on null |
 | A Task node only refers to a registered Task: an unknown name throws when the node is built | `TaskBank.get` |
-| Every Composite and Decorator defines `execute` | Compiler: `CompositeNode` and `DecoratorNode` are abstract classes |
+| Every Composite, Decorator and Leaf node defines `execute` | Compiler: `CompositeNode`, `DecoratorNode` and `LeafNode` are abstract classes |
 | A state machine ticks only once it has a State | `FSM.tick` throws |
+| `tick` never takes a Transition to the current State | `FSM.getTransition` skips them |
+| The State graph has one node per State object and one edge per Transition; States sharing a name stay separate | `FSM.toDot` (DOT ids by object identity) |
+| On a tie, the first Motive in `motives` is the most important | `UtilityAgent.getMostImportantMotive` |
 | A Transition is taken only from the State object it was added for, even if another State has the same name | `FSM._transitions` (an `ObjectMap` keyed by State) |
 | A composite returns to its first child whenever it returns SUCCESS or FAILURE | `CompositeNode.runChildren` |
 | A composite returns RUNNING only when its current child returned RUNNING | `CompositeNode.runChildren` |
@@ -86,7 +91,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 ### Shared
 
 - **Blackboard:** the shared facts an agent's AI reads and writes, each a named number. A
-  fact never set reads as 0. Owner: `dropecho.ai.Blackboard`; called `context` in nodes.
+  fact never set reads as 0, and it can list the names of the facts that have been set
+  (`keys()`, sorted). Owner: `dropecho.ai.Blackboard`; called `context` in nodes.
 
 ### Behavior tree
 
@@ -102,7 +108,7 @@ Actions pending --update(dt): front Action.update(dt)--> pending
   by name. Owner: `dropecho.ai.TaskBank` (`register`, `get`).
 - **Task node:** a leaf that runs a registered Task. Owner: `bt.node.TaskNode`.
 - **Leaf node:** the base for game-defined leaves that are classes instead of Tasks.
-  Owner: `bt.node.LeafNode`.
+  Owner: `bt.node.LeafNode`, an abstract class; subclasses implement `execute`.
 - **Composite:** a node with several children, run in order; in one tick it runs on to
   the next child until the result is decided or a child is RUNNING. Owner:
   `bt.node.composite.CompositeNode`.
@@ -132,8 +138,9 @@ Actions pending --update(dt): front Action.update(dt)--> pending
   `fsm.Condition` (typedef in `FSM.hx`).
 - **Any-transition:** a Transition taken from whatever State is current. Owner:
   `FSM.addAnyTransition`.
-- **State graph:** the state machine drawn as Graphviz DOT, with the current State and the
-  Transition about to be taken marked active. Owner: `FSM.toDot`.
+- **State graph:** the state machine drawn as Graphviz DOT: one node per State, marked
+  `current` for the current State, `active` on the Transition the next tick would take and
+  `next` on its target. Finding that Transition asks the Conditions. Owner: `FSM.toDot`.
 
 ### Goal planner
 
@@ -163,16 +170,14 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 
 - **Motive:** a named need with a value; the lower the value, the more urgent. Owner:
   `utility.Motive`.
-- **Utility agent:** holds Motives and picks the most important one, the lowest. Owner:
+- **Utility agent:** holds Motives and picks the most important one, the lowest; on a tie,
+  the first in its list. Owner:
   `utility.UtilityAgent` (in `Motive.hx`).
 
 ### Internals
 
-- **Child cursor:** a composite's position in its children. Owner:
-  `dropecho.util.CurrentIterator`. Its `next()` returns the current child and moves on, and
-  `hasNext()` means "is there a child after the current one".
-- **NotImplementedException:** thrown by `LeafNode.execute`, which game code must override.
-  Owner: `dropecho.util.NotImplementedException`.
+- **Child cursor:** a composite's position in its children: which child runs next. Owner:
+  `bt.node.composite.ChildCursor`: `current()`, `advance()`, `isOnLast()`, `reset()`.
 
 ## Explain test
 
@@ -185,4 +190,4 @@ whose Condition is true, any-transitions first. A Planner searches every World s
 reachable from the empty one using Actions' preconditions and postconditions, and returns
 the cheapest Plan to the Goal; the Plan then updates its front Action each tick and drops
 each Action whose done check is true. A Utility agent picks the Motive with the lowest
-value.
+value, the first on a tie.

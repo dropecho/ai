@@ -26,7 +26,7 @@ below are in Haxe.
 ## Blackboard
 
 Named `Float` facts shared by the behavior tree and the state machine. A fact that was never
-set reads as `0`.
+set reads as `0`. `keys()` lists the names of the facts that have been set, sorted.
 
 ```haxe
 import dropecho.ai.Blackboard;
@@ -35,6 +35,7 @@ var bb = new Blackboard();
 bb.set("hunger", 2);
 bb.increment("hunger"); // 3
 bb.get("thirst");       // 0
+bb.keys();              // ["hunger"]
 ```
 
 ## Behavior tree
@@ -66,13 +67,14 @@ Register a Task before creating a `TaskNode` that names it. Composites (`Selecto
 `SequenceNode`) run on to the next child in the same tick until the result is decided or a
 child returns `RUNNING`; a `RUNNING` child is resumed next tick. Decorators (`InverterNode`, `RepeaterNode`,
 `RepeatUntilNode`, `SucceederNode`) wrap a single child. For leaves that are classes
-rather than functions, extend `LeafNode` and override `execute()`.
+rather than functions, extend `LeafNode` and implement `execute()` (it is abstract; no `override`).
 
 ## State machine
 
 Implement `IState`, add transitions with a condition, set the starting State, then
 `tick()`. After the current State ticks, the first transition whose condition is true is
 taken; transitions added with `addAnyTransition` are checked first and apply from any State.
+Transitions to the current State are skipped, so a State is never re-entered by `tick()`.
 
 ```haxe
 import dropecho.ai.Blackboard;
@@ -109,8 +111,9 @@ fsm.changeToState(wander); // required before the first tick
 fsm.tick(); // call every tick
 ```
 
-Transitions are stored by State name, so give each State a distinct `getName()`.
-`fsm.toDot()` returns the machine as a Graphviz graph.
+Transitions belong to the State object, so States may share a name.
+`fsm.toDot()` returns the machine as a Graphviz graph, marking the current State (`class="current"`),
+the Transition the next tick would take (`class="active"`) and its target (`class="next"`).
 
 ## GOAP planner
 

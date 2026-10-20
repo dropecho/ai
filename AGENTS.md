@@ -39,12 +39,11 @@ See `.agents/architecture.md` for class responsibilities and data flows.
 src/dropecho/ai/           # library source
   bt/                      # behavior tree
     node/
-      composite/           # SelectorNode, SequenceNode
+      composite/           # SelectorNode, SequenceNode, ChildCursor
       decorator/           # InverterNode, RepeaterNode, RepeatUntilNode, SucceederNode
   fsm/                     # FSM, IState, Transition
   goap/                    # Action, Plan, Planner, State
   utility/                 # Motive, UtilityAgent
-src/dropecho/util/         # CurrentIterator, NotImplementedException
 test/                      # utest test suites (mirroring src structure)
   ai/  bt/  fsm/  goap/  util/  utility/
 targets/                   # per-target HXML fragments

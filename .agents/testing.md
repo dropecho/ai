@@ -24,8 +24,9 @@ Test files mirror source files under `test/`, organized by module:
 | `src/dropecho/ai/goap/Action.hx` | `test/goap/ActionTests.hx` |
 | `src/dropecho/ai/goap/Plan.hx` | `test/goap/PlanTests.hx` |
 | `src/dropecho/ai/goap/Planner.hx` | `test/goap/PlannerTests.hx` |
-| `src/dropecho/util/CurrentIterator.hx` | `test/util/CurrentIteratorTests.hx` |
-| `src/dropecho/ai/utility/Motive.hx` | `test/UtilityTests.hx` |
+| `src/dropecho/ai/bt/node/composite/ChildCursor.hx` | `test/bt/node/composite/ChildCursorTests.hx` |
+| `src/dropecho/ai/bt/node/LeafNode.hx` | `test/bt/node/LeafNodeTests.hx` |
+| `src/dropecho/ai/utility/Motive.hx` | `test/utility/UtilityTests.hx` |
 
 `test/bt/node/TestNode.hx` is a shared helper (not a test class) used by BT node tests.
 
@@ -52,4 +53,3 @@ Test files mirror source files under `test/`, organized by module:
 - No tests for `FSM.toDot()` output format.
 - No tests for `GOAP` with unsatisfiable goals (should return `null` from `generatePlan()`).
 - No tests for `Plan.update()` delta time propagation to `Action.UpdateFunc`.
-- `LeafNode.hx` is a stub — no tests and no implementation.

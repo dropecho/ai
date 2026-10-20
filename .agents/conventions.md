@@ -26,12 +26,12 @@
 
 ## Abstract Base Nodes
 
-- `CompositeNode` and `DecoratorNode` are abstract classes: subclasses implement `execute()` without `override`. `LeafNode.execute()` throws `NotImplementedException` until overridden.
+- `CompositeNode`, `DecoratorNode` and `LeafNode` are abstract classes: subclasses implement `execute()` without `override`.
 - Do not instantiate `CompositeNode` or `DecoratorNode` directly.
 
 ## BT Node State
 
-- Composite nodes use `CurrentIterator<Node>` to track position across ticks — reset it in the same call where you return a terminal status (SUCCESS or FAILURE).
+- Composite nodes use a `ChildCursor` to track position across ticks — reset it in the same call where you return SUCCESS or FAILURE.
 - Do not store per-tick state on the `Blackboard` unless it must persist across tree restarts.
 
 ## GOAP Conventions
