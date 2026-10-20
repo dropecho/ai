@@ -349,7 +349,7 @@ dropecho_ai_fsm_Transition.__name__ = true;
 class dropecho_ai_fsm_FSM {
 	constructor() {
 		this._anyTransitions = [];
-		this._transitions = dropecho_interop_AbstractMap._new();
+		this._transitions = new haxe_ds_ObjectMap();
 	}
 	tick() {
 		if(this._currentState == null) {
@@ -375,13 +375,11 @@ class dropecho_ai_fsm_FSM {
 	addTransition(fromState,toState,condition) {
 		let t = new dropecho_ai_fsm_Transition(toState,condition);
 		let transitions = null;
-		let this1 = this._transitions;
-		let key = Std.string(fromState.getName());
-		if(Object.prototype.hasOwnProperty.call(this1,key)) {
-			transitions = this._transitions[Std.string(fromState.getName())];
+		if(this._transitions.h.__keys__[fromState.__id__] != null) {
+			transitions = this._transitions.h[fromState.__id__];
 		} else {
 			transitions = [];
-			this._transitions[Std.string(fromState.getName())] = transitions;
+			this._transitions.set(fromState,transitions);
 		}
 		transitions.push(t);
 	}
@@ -398,15 +396,13 @@ class dropecho_ai_fsm_FSM {
 				return t;
 			}
 		}
-		let this1 = this._transitions;
-		let tmp = this._currentState;
-		let key = tmp != null ? tmp.getName() : null;
-		let currentStateHasTransitions = Object.prototype.hasOwnProperty.call(this1,Std.string(key));
-		if(currentStateHasTransitions == false) {
+		if(this._currentState == null) {
 			return null;
 		}
-		let tmp1 = this._currentState;
-		let _currentTransitions = this._transitions[Std.string(tmp1 != null ? tmp1.getName() : null)];
+		if(this._transitions.h.__keys__[this._currentState.__id__] != null == false) {
+			return null;
+		}
+		let _currentTransitions = this._transitions.h[this._currentState.__id__];
 		if(_currentTransitions != null) {
 			let _g = 0;
 			while(_g < _currentTransitions.length) {
@@ -437,28 +433,29 @@ class dropecho_ai_fsm_FSM {
 				}
 			}
 		}
-		let _g = new dropecho_interop_JSAbstractMapKeyValueIterator(this._transitions);
-		while(_g.hasNext()) {
-			let _g1 = _g.next();
-			let key = _g1.key;
-			let value = _g1.value;
-			nodeOutput = nodeOutput + "\n" + key;
-			let _g2 = 0;
-			while(_g2 < value.length) {
-				let edge = value[_g2];
-				++_g2;
-				edgeOutput += "\n " + key + " -> " + edge.to.getName();
+		let map = this._transitions;
+		let _g_keys = map.keys();
+		while(_g_keys.hasNext()) {
+			let key = _g_keys.next();
+			let _g_value = map.get(key);
+			let key1 = key.getName();
+			nodeOutput = nodeOutput + "\n" + key1;
+			let _g = 0;
+			while(_g < _g_value.length) {
+				let edge = _g_value[_g];
+				++_g;
+				edgeOutput += "\n " + key1 + " -> " + edge.to.getName();
 				if(activeTransition == edge) {
 					edgeOutput += "[class=\"active\"]";
 				}
 			}
-			edgeOutput += "\n " + key + " -> " + key;
-			if(this._currentState != null && key == this._currentState.getName()) {
+			edgeOutput += "\n " + key1 + " -> " + key1;
+			if(key == this._currentState) {
 				if(activeTransition == null) {
 					nodeOutput += "[class=\"active\"]";
 					edgeOutput += "[class=\"active\"]";
 				}
-			} else if(activeTransitionName == key) {
+			} else if(activeTransitionName == key1) {
 				nodeOutput += "[class=\"active\"]";
 			}
 		}
@@ -1444,6 +1441,35 @@ class haxe_ds__$List_ListIterator {
 	}
 }
 haxe_ds__$List_ListIterator.__name__ = true;
+class haxe_ds_ObjectMap {
+	constructor() {
+		this.h = { __keys__ : { }};
+	}
+	set(key,value) {
+		let id = key.__id__;
+		if(id == null) {
+			id = (key.__id__ = $global.$haxeUID++);
+		}
+		this.h[id] = value;
+		this.h.__keys__[id] = key;
+	}
+	get(key) {
+		return this.h[key.__id__];
+	}
+	keys() {
+		let a = [];
+		for( var key in this.h.__keys__ ) {
+		if(this.h.hasOwnProperty(key)) {
+			a.push(this.h.__keys__[key]);
+		}
+		}
+		return new haxe_iterators_ArrayIterator(a);
+	}
+	keyValueIterator() {
+		return new haxe_iterators_MapKeyValueIterator(this);
+	}
+}
+haxe_ds_ObjectMap.__name__ = true;
 class haxe_iterators_ArrayIterator {
 	constructor(array) {
 		this.current = 0;
@@ -1465,6 +1491,20 @@ class haxe_iterators_DynamicAccessKeyValueIterator {
 	}
 }
 haxe_iterators_DynamicAccessKeyValueIterator.__name__ = true;
+class haxe_iterators_MapKeyValueIterator {
+	constructor(map) {
+		this.map = map;
+		this.keys = map.keys();
+	}
+	hasNext() {
+		return this.keys.hasNext();
+	}
+	next() {
+		let key = this.keys.next();
+		return { value : this.map.get(key), key : key};
+	}
+}
+haxe_iterators_MapKeyValueIterator.__name__ = true;
 class js_Boot {
 	static __string_rec(o,s) {
 		if(o == null) {

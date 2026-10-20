@@ -27,7 +27,7 @@ in code. Nothing here is implemented until approved. Terms are from
 | R7 | Refactor [simplify] | Drop the constructor's sort-and-copy; the cheapest-edge check already keeps the cheapest Action | Removes a `cast` and a duplicate rule | T8 | done |
 | A3 | API change | Move `CurrentIterator` into the composite package as a child cursor with `advance()` / `isOnLast()` | M3; a `for` loop over it today silently skips the last child | — | open |
 | A1 | API change | Rename GOAP `State` to `Goal` (breaking) | M1 | — | open |
-| R10 | Refactor [reuse] | Selector and Sequence are mirror images; share one "run current child, stop on X" step in Composite | One copy of the cursor rules | T6, B10 | approved |
+| R10 | Refactor [reuse] | Selector and Sequence are mirror images; share one "run current child, stop on X" step in Composite | One copy of the cursor rules | T6, B10 | done |
 | R11 | Refactor [pattern] | Make CompositeNode and DecoratorNode Haxe `abstract class`es so a missing `execute` is a compile error, not a runtime throw | Compiler enforces what convention does now | — | done |
 | R8 | Refactor [sweep] | P15: brace the 7 one-line `if`s, all in the Planner | Preference sweep | — | done |
 | R16 | Refactor [sweep] | P18: give the 10 untyped public functions explicit return types (`Null<Motive>` for the most important motive) | Preference sweep; signatures stop changing with bodies | — | done |
@@ -36,7 +36,7 @@ in code. Nothing here is implemented until approved. Terms are from
 | R18 | Refactor [sweep] | P20: write the 2 negated logic checks as `== false` in a named value | Preference sweep | — | done |
 | T6 | Test [pin] | Pin "one child per tick" for Selector and Sequence | Protects R10 | — | declined: B10 changes this behaviour instead |
 | T8 | Test [pin] | Pin that among equal-cost Actions the first given wins | Protects R7 | — | done |
-| B10 | Bug (question) | Composites run one child per tick; most behavior trees run on to the next child in the same tick. Intended? | Decides R10's shape | — | approved |
+| B10 | Bug (question) | Composites run one child per tick; most behavior trees run on to the next child in the same tick. Intended? | Decides R10's shape | — | done |
 | B11 | Bug | An unknown task name gives a Task node `null`, which fails later with "not a function"; throw at construction, listing registered names | P3; failure where the cause is | — | done |
 | B12 | Bug (question) | State machine transitions are keyed by State name, so two States with one name (two instances of one class, as in the tests) share transitions silently | Removes a trap | — | done: keyed by the State object |
 | B17 | Bug (question) | An Action's default done check is always true, so a Plan drops every remaining Action after its first update; should the default be "not done", or should a done check be required? | Plans built with defaults run fully | — | open |
