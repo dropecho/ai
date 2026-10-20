@@ -40,6 +40,11 @@ in code. Nothing here is implemented until approved. Terms are from
 | B11 | Bug | An unknown task name gives a Task node `null`, which fails later with "not a function"; throw at construction, listing registered names | P3; failure where the cause is | — | done |
 | B12 | Bug (question) | State machine transitions are keyed by State name, so two States with one name (two instances of one class, as in the tests) share transitions silently | Removes a trap | — | open |
 | B17 | Bug (question) | An Action's default done check is always true, so a Plan drops every remaining Action after its first update; should the default be "not done", or should a done check be required? | Plans built with defaults run fully | — | open |
+| B18 | Bug | `Plan.currentAction` and `Plan.length` are Haxe properties, so in JS they read as `undefined` (only `get_currentAction()` works) and a Plan isn't `for…of`-iterable; A4's accessors only help Haxe callers | JS users can read a Plan | A4 | open |
+| B19 | Bug (question) | An any-transition whose target is the current State re-fires every tick (onExit/onEnter again) while its Condition is true; skip transitions to the current State? | No surprise re-entry | — | open |
+| B20 | Bug | `toDot()` quirks: current State only marked when no Transition is pending, a self-loop on every State, target-only States not declared, names unquoted (spaces/hyphens break DOT) | A correct State graph | — | open |
+| A10 | API change | Blackboard can't list its facts, so tools must know keys in advance (the old FSM demo read a field that no longer exists) | Debug views and demos | — | open |
+| B21 | Bug (question) | With equal values, the most important Motive is the later one; should it be the first? | Predictable ties | — | open |
 | B16 | Bug (upstream) | Fix `Queue.enqueueMany` in dropecho.ds (adds to the front on JS), then remove the workaround in `Plan.new` | Removes a workaround | — | open |
 | A2 | API change | GOAP and Utility aren't exported in the CJS bundle, while dropecho.ds's Graph/GraphNode/Heap/Queue/Search now are, as top-level names | JS users can reach the planner | — | done |
 | A4 | API change | Replace the public `Plan._actions` with `currentAction` and `iterator()`; tests stop reaching into it (finishes R4) | Plan owns its queue | — | partly done: accessors added, tests moved; making `_actions` private waits for the next major |
@@ -223,6 +228,15 @@ loop in `Plan.new`.
 `() -> true`. `Plan.update` runs the front Action, then `isCompleted` drops every Action
 whose done check is true, so with defaults only the first Action ever runs. Found while
 writing the README example. Default to "not done", or require a done check?
+
+---
+
+### B18–B21, A10 — found while building the demo site
+
+See the Summary rows; each was hit by a page in `docs/` and worked around there
+(`docs/goap.js` `remainingActions`, `docs/fsm.js` flee Condition and `current` class).
+A2 also still leaks dropecho.ds's `Graph`, `GraphNode`, `Heap`, `Queue` and `Search` onto
+`window` in the browser.
 
 ---
 
