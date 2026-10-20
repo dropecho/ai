@@ -291,6 +291,28 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 	}
 }
 dropecho_ai_bt_node_composite_CompositeNode.__name__ = true;
+class dropecho_ai_bt_node_composite_ReactiveSelectorNode extends dropecho_ai_bt_node_composite_CompositeNode {
+	constructor(children) {
+		super(children);
+	}
+	execute() {
+		this.childCursor.reset();
+		return this.runChildren(0);
+	}
+}
+$hx_exports["bt"]["ReactiveSelectorNode"] = dropecho_ai_bt_node_composite_ReactiveSelectorNode;
+dropecho_ai_bt_node_composite_ReactiveSelectorNode.__name__ = true;
+class dropecho_ai_bt_node_composite_ReactiveSequenceNode extends dropecho_ai_bt_node_composite_CompositeNode {
+	constructor(children) {
+		super(children);
+	}
+	execute() {
+		this.childCursor.reset();
+		return this.runChildren(1);
+	}
+}
+$hx_exports["bt"]["ReactiveSequenceNode"] = dropecho_ai_bt_node_composite_ReactiveSequenceNode;
+dropecho_ai_bt_node_composite_ReactiveSequenceNode.__name__ = true;
 class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_composite_CompositeNode {
 	constructor(children) {
 		super(children);
@@ -564,9 +586,10 @@ class dropecho_ai_goap_Plan {
 		if(deltaTime == null) {
 			deltaTime = 0;
 		}
-		if(this._actions._data.length > 0) {
-			this._actions._data.first().onUpdate(deltaTime);
+		if(this.isCompleted()) {
+			return true;
 		}
+		this._actions._data.first().onUpdate(deltaTime);
 		return this.isCompleted();
 	}
 	currentAction() {
