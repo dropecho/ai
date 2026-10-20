@@ -1,8 +1,6 @@
 package dropecho.ai.bt.node.decorator;
 
-import dropecho.util.NotImplementedException;
-
-class DecoratorNode implements Node {
+abstract class DecoratorNode implements Node {
 	private var child:Node;
 	private var context:Blackboard;
 
@@ -17,7 +15,5 @@ class DecoratorNode implements Node {
 		}
 	}
 
-	public function execute():NODE_STATUS {
-		throw new NotImplementedException();
-	};
+	abstract public function execute():NODE_STATUS;
 }

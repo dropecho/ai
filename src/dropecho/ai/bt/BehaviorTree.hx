@@ -1,6 +1,7 @@
 package dropecho.ai.bt;
 
 import dropecho.ai.bt.node.Node;
+import dropecho.ai.bt.node.NODE_STATUS;
 
 @:expose("bt.BehaviorTree")
 class BehaviorTree implements Node {
@@ -15,7 +16,7 @@ class BehaviorTree implements Node {
 		this.child = root;
 	}
 
-	public function init(context:Blackboard) {
+	public function init(context:Blackboard):Void {
 		if (context == null) {
 			context = new Blackboard();
 		}
@@ -24,7 +25,7 @@ class BehaviorTree implements Node {
 		child.init(this.context);
 	}
 
-	public function execute() {
+	public function execute():NODE_STATUS {
 		return this.child.execute();
 	}
 }

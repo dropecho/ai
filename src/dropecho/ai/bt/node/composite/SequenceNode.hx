@@ -1,14 +1,12 @@
 package dropecho.ai.bt.node.composite;
 
-using Lambda;
-
 @:expose("bt.SequenceNode")
 class SequenceNode extends CompositeNode {
 	public function new(children:Array<Node>) {
 		super(children);
 	}
 
-	public override function execute():NODE_STATUS {
+	public function execute():NODE_STATUS {
 		var childStatus = this.childIterator
 			.current()
 			.execute();

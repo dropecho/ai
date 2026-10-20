@@ -6,7 +6,7 @@ class InverterNode extends DecoratorNode {
 		super(child);
 	}
 
-	public override function execute():NODE_STATUS {
+	public function execute():NODE_STATUS {
 		var status = this.child.execute();
 
 		switch (status) {

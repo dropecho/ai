@@ -31,7 +31,7 @@ class FSM {
 	 * Updates the current state, and gets any transitions that match.
 	 * Given it has a transition, it invokes next.onEnter and current.onExit
 	 */
-	public function tick() {
+	public function tick():Void {
 		if (_currentState == null) {
 			throw "FSM.tick() called before changeToState() — set an initial state first";
 		}
@@ -50,7 +50,7 @@ class FSM {
 	/**
 	 * @param state - The state to change to.
 	 */
-	public function changeToState(state:IState) {
+	public function changeToState(state:IState):Void {
 		_currentState?.onExit();
 		state.onEnter();
 		_currentState = state;
@@ -60,7 +60,7 @@ class FSM {
 	 * Add a transition to the FSM.
 	 * This condition, when true, changes the FSM from the fromState, to the toState.
 	 */
-	public function addTransition(fromState:IState, toState:IState, condition:Condition) {
+	public function addTransition(fromState:IState, toState:IState, condition:Condition):Void {
 		var t = new Transition(toState, condition);
 
 		var transitions:Array<Transition> = null;
@@ -79,7 +79,7 @@ class FSM {
 	 * Add a transition to the FSM.
 	 * This condition, when true, changes the FSM from ANY state to the toState.
 	 */
-	public function addAnyTransition(to:IState, condition:Condition) {
+	public function addAnyTransition(to:IState, condition:Condition):Void {
 		_anyTransitions.push(new Transition(to, condition));
 	}
 
@@ -90,7 +90,8 @@ class FSM {
 			}
 		}
 
-		if (!_transitions.exists(_currentState?.getName())) {
+		var currentStateHasTransitions = _transitions.exists(_currentState?.getName());
+		if (currentStateHasTransitions == false) {
 			return null;
 		}
 
@@ -105,7 +106,7 @@ class FSM {
 		return null;
 	}
 
-	public function toDot() {
+	public function toDot():String {
 		var nodeOutput = "";
 		var edgeOutput = "";
 
@@ -116,7 +117,8 @@ class FSM {
 			nodeOutput = "any\n";
 			for (any in _anyTransitions) {
 				edgeOutput += '\n any -> ${any.to.getName()}';
-				if (activeTransitionName == any.to.getName() && _anyTransitions.contains(activeTransition)) {
+				var isActiveAnyTransition = activeTransitionName == any.to.getName() && _anyTransitions.contains(activeTransition);
+				if (isActiveAnyTransition) {
 					edgeOutput += '[class="active"]';
 				}
 			}
@@ -135,7 +137,8 @@ class FSM {
 			}
 			edgeOutput = edgeOutput + '\n $key -> $key';
 
-			if (_currentState != null && key == _currentState.getName()) {
+			var isCurrentState = _currentState != null && key == _currentState.getName();
+			if (isCurrentState) {
 				if (activeTransition == null) {
 					nodeOutput += '[class="active"]';
 					edgeOutput += '[class="active"]';

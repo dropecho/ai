@@ -1,4 +1,4 @@
-package;
+package utility;
 
 import dropecho.ai.utility.Motive;
 import dropecho.ai.utility.Motive.UtilityAgent;
@@ -15,10 +15,8 @@ class UtilityTests extends Test {
 		util.motives.push(hunger);
 		util.motives.push(thirst);
 
-		trace(util);
-
 		var lowest = util.getMostImportantMotive();
-		Assert.equals(lowest, hunger);
+		Assert.equals(hunger, lowest);
 	}
 
 	public function test_empty_motives_returns_null() {

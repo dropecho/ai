@@ -34,4 +34,8 @@ class TaskNodeTests extends Test {
 		node.execute();
 		Assert.isTrue(contextWasNotNull);
 	}
+
+	public function test_new_with_an_unknown_task_name_throws() {
+		Assert.raises(() -> new TaskNode("unregistered_task_node"));
+	}
 }
