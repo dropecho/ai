@@ -236,6 +236,20 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 		};
 		Lambda.iter(this.children,initChild);
 	}
+	runChildren(decidingStatus) {
+		while(true) {
+			let childStatus = this.childIterator.current().execute();
+			if(childStatus == 2) {
+				return 2;
+			}
+			let isLastChild = this.childIterator.hasNext() == false;
+			if(childStatus == decidingStatus || isLastChild) {
+				this.childIterator.reset();
+				return childStatus;
+			}
+			this.childIterator.next();
+		}
+	}
 }
 dropecho_ai_bt_node_composite_CompositeNode.__name__ = true;
 class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_composite_CompositeNode {
@@ -243,19 +257,7 @@ class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_com
 		super(children);
 	}
 	execute() {
-		let status = this.childIterator.current().execute();
-		if(status == 0) {
-			this.childIterator.reset();
-			return 0;
-		}
-		if(status == 1) {
-			if(this.childIterator.hasNext() == false) {
-				this.childIterator.reset();
-				return 1;
-			}
-			this.childIterator.next();
-		}
-		return 2;
+		return this.runChildren(0);
 	}
 }
 $hx_exports["bt"]["SelectorNode"] = dropecho_ai_bt_node_composite_SelectorNode;
@@ -265,17 +267,7 @@ class dropecho_ai_bt_node_composite_SequenceNode extends dropecho_ai_bt_node_com
 		super(children);
 	}
 	execute() {
-		let childStatus = this.childIterator.current().execute();
-		if(childStatus == 2) {
-			return 2;
-		}
-		let allChildrenSucceeded = this.childIterator.hasNext() == false && childStatus == 0;
-		if(childStatus == 1 || allChildrenSucceeded) {
-			this.childIterator.reset();
-			return childStatus;
-		}
-		this.childIterator.next();
-		return 2;
+		return this.runChildren(1);
 	}
 }
 $hx_exports["bt"]["SequenceNode"] = dropecho_ai_bt_node_composite_SequenceNode;

@@ -38,13 +38,15 @@ Blackboard; the goal planner and utility do not. The goal planner depends on `dr
 ### Composite position
 
 ```
-child 0 --child RUNNING--> same child
-        --child finishes, not the deciding status, more children--> next child (parent returns RUNNING)
+child 0 --child RUNNING--> same child (parent returns RUNNING; resumed next tick)
+        --child finishes, not the deciding status, more children--> next child, run in the same tick
         --deciding status, or last child finished--> back to child 0 (parent returns that status)
 ```
 
-The deciding status is SUCCESS for a Selector and FAILURE for a Sequence. A composite runs
-**one child per tick**: after a child finishes, the next child runs on the next tick.
+The deciding status is SUCCESS for a Selector and FAILURE for a Sequence. Within one tick a
+composite **runs on through its children** until one returns the deciding status, the last
+child finishes, or a child is RUNNING. A composite returns RUNNING only when a child is
+RUNNING; next tick it resumes that child without re-running the children before it.
 
 ### State machine
 
@@ -71,7 +73,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 | A Task node only refers to a registered Task: an unknown name throws when the node is built | `TaskBank.get` |
 | Every Composite and Decorator defines `execute` | Compiler: `CompositeNode` and `DecoratorNode` are abstract classes |
 | A state machine ticks only once it has a State | `FSM.tick` throws |
-| A composite returns to its first child whenever it returns SUCCESS or FAILURE | `SelectorNode.execute`, `SequenceNode.execute` |
+| A composite returns to its first child whenever it returns SUCCESS or FAILURE | `CompositeNode.runChildren` |
+| A composite returns RUNNING only when its current child returned RUNNING | `CompositeNode.runChildren` |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
 | Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
 | A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from an empty world state | `Planner.generatePlan` (Dijkstra over every reachable world state) |
@@ -99,7 +102,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 - **Task node:** a leaf that runs a registered Task. Owner: `bt.node.TaskNode`.
 - **Leaf node:** the base for game-defined leaves that are classes instead of Tasks.
   Owner: `bt.node.LeafNode`.
-- **Composite:** a node with several children, run in order. Owner:
+- **Composite:** a node with several children, run in order; in one tick it runs on to
+  the next child until the result is decided or a child is RUNNING. Owner:
   `bt.node.composite.CompositeNode`.
   - **Selector:** succeeds at the first child that succeeds; fails if all fail.
     Owner: `SelectorNode`.
@@ -171,8 +175,9 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 ## Explain test
 
 Game code builds an agent's AI from one of four tools. A behavior tree is given a
-Blackboard and executed each tick; its Composites run their children in order, one per
-tick, and Decorators change a child's Status, down to Task nodes that run Tasks from the
+Blackboard and executed each tick; its Composites run their children in order, running on
+to the next child in the same tick until one decides or is RUNNING, and Decorators change
+a child's Status, down to Task nodes that run Tasks from the
 Task registry. A state machine ticks its current State, then takes the first Transition
 whose Condition is true, any-transitions first. A Planner searches every World state
 reachable from the empty one using Actions' preconditions and postconditions, and returns

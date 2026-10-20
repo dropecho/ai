@@ -17,7 +17,7 @@ Node-based hierarchical behavior execution. Each node returns a `NODE_STATUS` (`
 - **`TaskBank`** — static registry mapping task names to `Blackboard → NODE_STATUS` functions
 - **`Blackboard`** — shared key→Int fact store passed through the tree
 
-Composite nodes (multiple children):
+Composite nodes (multiple children). Within one tick a composite runs on to the next child until the result is decided or a child returns RUNNING; a RUNNING child is resumed next tick:
 - **`SelectorNode`** — tries children in order; returns SUCCESS on first success, FAILURE if all fail
 - **`SequenceNode`** — runs children in order; returns FAILURE on first failure, SUCCESS when all succeed
 
