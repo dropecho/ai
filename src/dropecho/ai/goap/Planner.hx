@@ -3,7 +3,6 @@ package dropecho.ai.goap;
 import dropecho.ds.Graph;
 import dropecho.ds.IGraphNode;
 import dropecho.ds.Queue;
-import dropecho.ds.Set;
 import dropecho.ds.graph.Search;
 import dropecho.interop.AbstractArray;
 import dropecho.interop.AbstractMap;
@@ -27,11 +26,9 @@ class Planner {
 
 		// BFS to expand the reachable state space
 		var frontier = new Queue<IGraphNode<String, Action>>();
-		var visited = new Set<String>(_stringHash);
 		var goalNodes = new Array<IGraphNode<String, Action>>();
 
 		frontier.enqueue(graph.nodes.get(startKey));
-		visited.add(startKey);
 
 		while (frontier.length > 0) {
 			var current = frontier.dequeue();
@@ -49,7 +46,6 @@ class Planner {
 					if (!graph.nodes.exists(nextKey)) {
 						graph.createNode(nextKey, nextKey);
 						frontier.enqueue(graph.nodes.get(nextKey));
-						visited.add(nextKey);
 					}
 
 					// Keep only the cheapest action for each state transition
@@ -75,7 +71,7 @@ class Planner {
 		var bestDist = Math.POSITIVE_INFINITY;
 		for (gn in goalNodes) {
 			var d:Float = result.distances[gn];
-			if (d != null && d < bestDist) {
+			if (d < bestDist) {
 				bestDist = d;
 				bestGoal = gn;
 			}
@@ -97,14 +93,6 @@ class Planner {
 		}
 
 		return new Plan(actions);
-	}
-
-	// Stable string hash for Set<String>
-	private static function _stringHash(s:String):Int {
-		var h = 0;
-		for (i in 0...s.length)
-			h = 31 * h + s.charCodeAt(i);
-		return h;
 	}
 
 	// Canonical sorted comma-joined key for a set of conditions
