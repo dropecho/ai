@@ -7,6 +7,9 @@ import dropecho.ds.graph.Search;
 import dropecho.interop.AbstractArray;
 import dropecho.interop.AbstractMap;
 
+private typedef WorldStateGraph = Graph<Array<String>, Action>;
+private typedef WorldStateNode = IGraphNode<Array<String>, Action>;
+
 class Planner {
 	private var _availableActions:AbstractArray<Action>;
 	private var _goal:State;
@@ -17,16 +20,31 @@ class Planner {
 	}
 
 	public function generatePlan():Null<Plan> {
-		var graph = new Graph<Array<String>, Action>();
+		var graph = new WorldStateGraph();
+		var start = graph.createNode([], _stateKey([]));
+		var goalNodes = _expandWorldStates(graph, start);
 
-		var startKey = "";
-		graph.createNode([], startKey);
+		var search = Search.dijkstra(start, (from, to) -> _actionCost(graph, from, to));
+		var goal = _cheapestGoal(goalNodes, search);
+		if (goal == null) {
+			return null;
+		}
 
-		// BFS to expand the reachable state space
-		var frontier = new Queue<IGraphNode<Array<String>, Action>>();
-		var goalNodes = new Array<IGraphNode<Array<String>, Action>>();
+		return _planTo(goal, start, graph, search);
+	}
 
-		frontier.enqueue(graph.nodes.get(startKey));
+	/**
+	 * Adds every world state reachable from `start` to the graph, with an edge for the
+	 * cheapest action between each pair.
+	 *
+	 * @param graph - The graph to fill.
+	 * @param start - The empty world state's node, already in the graph.
+	 * @return The nodes that satisfy the goal, in the order they were reached.
+	 */
+	private function _expandWorldStates(graph:WorldStateGraph, start:WorldStateNode):Array<WorldStateNode> {
+		var frontier = new Queue<WorldStateNode>();
+		var goalNodes = new Array<WorldStateNode>();
+		frontier.enqueue(start);
 
 		while (frontier.length > 0) {
 			var current = frontier.dequeue();
@@ -42,11 +60,9 @@ class Planner {
 					var nextKey = _stateKey(nextConditions);
 
 					if (!graph.nodes.exists(nextKey)) {
-						graph.createNode(nextConditions, nextKey);
-						frontier.enqueue(graph.nodes.get(nextKey));
+						frontier.enqueue(graph.createNode(nextConditions, nextKey));
 					}
 
-					// Keep only the cheapest action for each state transition
 					var existing = graph.edgeData(current.label, nextKey);
 					if (existing == null || existing.Cost > action.Cost) {
 						graph.addUniEdge(current.label, nextKey, action);
@@ -55,39 +71,55 @@ class Planner {
 			}
 		}
 
-		if (goalNodes.length == 0) return null;
+		return goalNodes;
+	}
 
-		// Dijkstra from start finds cheapest path to every reachable node
-		var startNode = graph.nodes.get(startKey);
-		var result = Search.dijkstra(startNode, (a, b) -> {
-			var action = graph.edgeData(a.label, b.label);
-			return action != null ? (action.Cost : Float) : Math.POSITIVE_INFINITY;
-		});
+	private function _actionCost(graph:WorldStateGraph, from:WorldStateNode, to:WorldStateNode):Float {
+		var action = graph.edgeData(from.label, to.label);
+		return action != null ? action.Cost : Math.POSITIVE_INFINITY;
+	}
 
-		// Pick the goal node with the lowest Dijkstra cost
-		var bestGoal:IGraphNode<Array<String>, Action> = null;
-		var bestDist = Math.POSITIVE_INFINITY;
-		for (gn in goalNodes) {
-			var d:Float = result.distances[gn];
-			if (d < bestDist) {
-				bestDist = d;
-				bestGoal = gn;
+	private function _cheapestGoal(goalNodes:Array<WorldStateNode>, search:SearchResult<Array<String>, Action>):Null<WorldStateNode> {
+		var cheapest:Null<WorldStateNode> = null;
+		var cheapestCost = Math.POSITIVE_INFINITY;
+		for (node in goalNodes) {
+			var cost:Float = search.distances[node];
+			if (cost < cheapestCost) {
+				cheapestCost = cost;
+				cheapest = node;
 			}
 		}
+		return cheapest;
+	}
 
-		if (bestGoal == null) return null;
-
-		// Reconstruct ordered action sequence by following prev pointers
+	/**
+	 * Follows the search's path back from the goal to collect the actions in the order they run.
+	 *
+	 * @param goal - The goal node to reach.
+	 * @param start - The empty world state's node.
+	 * @param graph - The expanded graph.
+	 * @param search - Dijkstra's result from `start`.
+	 * @return The plan, or null if the path is broken.
+	 */
+	private function _planTo(
+		goal:WorldStateNode,
+		start:WorldStateNode,
+		graph:WorldStateGraph,
+		search:SearchResult<Array<String>, Action>
+	):Null<Plan> {
 		var actions = new AbstractArray<Action>();
-		var current = bestGoal;
-		while (current.label != startKey) {
-			var prevLabel:String = result.path[current];
-			if (prevLabel == null) return null;
-			var prev = graph.nodes.get(prevLabel);
+		var current = goal;
+		while (current != start) {
+			var prevLabel:String = search.path[current];
+			if (prevLabel == null) {
+				return null;
+			}
 			var action = graph.edgeData(prevLabel, current.label);
-			if (action == null) return null;
+			if (action == null) {
+				return null;
+			}
 			actions.unshift(action);
-			current = prev;
+			current = graph.nodes.get(prevLabel);
 		}
 
 		return new Plan(actions);
