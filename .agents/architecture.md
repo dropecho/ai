@@ -14,18 +14,30 @@ src/dropecho/ai/
 │   └── node/
 │       ├── Node.hx            # Node interface + IExecutable<T>
 │       ├── NODE_STATUS.hx     # Status enum abstract: SUCCESS, FAILURE, RUNNING
-│       ├── LeafNode.hx        # Abstract base for game-defined leaves (subclasses implement execute)
+│       ├── LeafNode.hx        # Abstract base for game-defined leaves (implement execute, may override halt)
 │       ├── TaskNode.hx        # Leaf that runs a registered Task
+│       ├── ConditionNode.hx   # Leaf: SUCCESS when its Check is true, else FAILURE
+│       ├── Check.hx           # Check typedef: Blackboard -> Bool
+│       ├── WaitNode.hx        # Leaf: RUNNING until a duration has passed
+│       ├── Duration.hx        # Validates durations for time-based nodes
 │       ├── composite/
-│       │   ├── CompositeNode.hx   # Base: children + child cursor
-│       │   ├── SelectorNode.hx
-│       │   └── SequenceNode.hx
+│       │   ├── CompositeNode.hx   # Base: children, child cursor, running child, lower-priority aborts
+│       │   ├── ChildCursor.hx     # Which child runs next
+│       │   ├── IAbortsLowerPriority.hx
+│       │   ├── SelectorNode.hx    # Optional reactive flag
+│       │   ├── SequenceNode.hx    # Optional reactive flag
+│       │   └── ParallelNode.hx    # Ticks all children; success/failure thresholds
 │       └── decorator/
-│           ├── DecoratorNode.hx   # Base: wraps one child
+│           ├── DecoratorNode.hx   # Base: wraps one child, forwards halt
 │           ├── InverterNode.hx
-│           ├── RepeaterNode.hx
+│           ├── SucceederNode.hx
+│           ├── RepeaterNode.hx    # Optional success count
+│           ├── RetryNode.hx
 │           ├── RepeatUntilNode.hx
-│           └── SucceederNode.hx
+│           ├── GuardNode.hx       # Runs its child while a Check holds
+│           ├── AbortMode.hx       # NONE, SELF, LOWER_PRIORITY, BOTH
+│           ├── TimeoutNode.hx
+│           └── CooldownNode.hx
 ├── fsm/
 │   ├── FSM.hx                 # State machine, plus Transition and the Condition typedef
 │   └── IState.hx              # State interface: getName, onEnter, onExit, tick

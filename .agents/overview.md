@@ -11,21 +11,27 @@
 Node-based hierarchical behavior execution. Each node returns a `NODE_STATUS` (`SUCCESS`, `FAILURE`, or `RUNNING`) per tick.
 
 - **`BehaviorTree`** — root wrapper around a single child `Node`; holds a `Blackboard` context
-- **`Node` / `IExecutable<T>`** — core interfaces (`init(context)` + `execute()`)
+- **`Node` / `IExecutable<T>`** — core interfaces: `init(context)`, `execute(deltaTime)`, and `halt()` for a RUNNING node its parent abandons
 - **`NODE_STATUS`** — enum abstract over `Int`: `SUCCESS=0`, `FAILURE=1`, `RUNNING=2`
 - **`TaskNode`** — leaf node that looks up and calls a named task from `TaskBank`
-- **`TaskBank`** — static registry mapping task names to `Blackboard → NODE_STATUS` functions
-- **`Blackboard`** — shared key→Int fact store passed through the tree
+- **`TaskBank`** — static registry mapping task names to `(Blackboard, deltaTime) → NODE_STATUS` functions
+- **`Blackboard`** — shared key→Float fact store passed through the tree
+- **`ConditionNode`**, **`WaitNode`** — leaves: a yes/no Check; wait for a duration
 
 Composite nodes (multiple children). Within one tick a composite runs on to the next child until the result is decided or a child returns RUNNING; a RUNNING child is resumed next tick:
 - **`SelectorNode`** — tries children in order; returns SUCCESS on first success, FAILURE if all fail
 - **`SequenceNode`** — runs children in order; returns FAILURE on first failure, SUCCESS when all succeed
+- Both take an optional `reactive` flag: start from the first child every tick and halt a running child no longer reached
+- **`ParallelNode`** — ticks all children; decides by success/failure thresholds and halts the rest
 
 Decorator nodes (single child wrapper):
 - **`InverterNode`** — flips SUCCESS↔FAILURE, passes RUNNING through
-- **`RepeaterNode`** — always returns RUNNING (repeats child indefinitely)
+- **`RepeaterNode`** — with a count, succeeds after that many child successes; without, always RUNNING
+- **`RetryNode`** — re-runs a failing child up to a number of attempts
 - **`RepeatUntilNode`** — returns RUNNING until child returns FAILURE, then returns SUCCESS
 - **`SucceederNode`** — always returns SUCCESS (or RUNNING if child is RUNNING)
+- **`GuardNode`** — runs its child while a Check holds; `AbortMode` NONE / SELF / LOWER_PRIORITY / BOTH
+- **`TimeoutNode`**, **`CooldownNode`** — limit a child by game time
 
 ### Finite State Machine (FSM)
 

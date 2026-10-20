@@ -20,6 +20,14 @@ Test files mirror source files under `test/`, organized by module:
 | `src/dropecho/ai/bt/node/decorator/RepeaterNode.hx` | `test/bt/node/decorator/RepeaterNodeTests.hx` |
 | `src/dropecho/ai/bt/node/decorator/RepeatUntilNode.hx` | `test/bt/node/decorator/RepeatUntilNodeTests.hx` |
 | `src/dropecho/ai/bt/node/decorator/SucceederNode.hx` | `test/bt/node/decorator/SucceederNodeTests.hx` |
+| `src/dropecho/ai/bt/node/ConditionNode.hx` | `test/bt/node/ConditionNodeTests.hx` |
+| `src/dropecho/ai/bt/node/WaitNode.hx` | `test/bt/node/WaitNodeTests.hx` |
+| `src/dropecho/ai/bt/node/composite/ParallelNode.hx` | `test/bt/node/composite/ParallelNodeTests.hx` |
+| `src/dropecho/ai/bt/node/decorator/RetryNode.hx` | `test/bt/node/decorator/RetryNodeTests.hx` |
+| `src/dropecho/ai/bt/node/decorator/GuardNode.hx` | `test/bt/node/decorator/GuardNodeTests.hx` |
+| `src/dropecho/ai/bt/node/decorator/AbortMode.hx` | `test/bt/node/decorator/AbortModeTests.hx` |
+| `src/dropecho/ai/bt/node/decorator/TimeoutNode.hx` | `test/bt/node/decorator/TimeoutNodeTests.hx` |
+| `src/dropecho/ai/bt/node/decorator/CooldownNode.hx` | `test/bt/node/decorator/CooldownNodeTests.hx` |
 | `src/dropecho/ai/fsm/FSM.hx` | `test/fsm/FSMTests.hx` |
 | `src/dropecho/ai/goap/Action.hx` | `test/goap/ActionTests.hx` |
 | `src/dropecho/ai/goap/Goal.hx` | `test/goap/GoalTests.hx` |
@@ -29,7 +37,7 @@ Test files mirror source files under `test/`, organized by module:
 | `src/dropecho/ai/bt/node/LeafNode.hx` | `test/bt/node/LeafNodeTests.hx` |
 | `src/dropecho/ai/utility/Motive.hx` | `test/utility/UtilityTests.hx` |
 
-`test/bt/node/TestNode.hx` is a shared helper (not a test class) used by BT node tests.
+`test/bt/node/TestNode.hx` is a shared helper (not a test class) used by BT node tests; it counts `executed` and `halted` and records `lastDeltaTime`. Halting behaviour across composites and decorators is in `test/bt/node/HaltTests.hx`.
 
 ## Test Helper: `TestNode`
 
