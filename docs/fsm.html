@@ -6,6 +6,13 @@
     <title>State machine · dropecho.ai</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="style.css" />
+    <style>
+      #graph .node.next ellipse {
+        stroke: var(--accent);
+        stroke-width: 2.5px;
+        stroke-dasharray: 5 3;
+      }
+    </style>
   </head>
   <body>
     <header class="site-header">
@@ -28,8 +35,9 @@
       </p>
       <p>
         Each tick the current State ticks first, then the state machine takes the first Transition
-        whose Condition is true, checking any-transitions before the current State's own. The State
-        graph below is drawn from <code>fsm.toDot()</code>.
+        whose Condition is true, checking any-transitions before the current State's own and skipping
+        any Transition to the State it is already in. The State graph below is drawn from
+        <code>fsm.toDot()</code>.
       </p>
 
       <div class="controls" role="group" aria-label="State machine controls">
@@ -42,7 +50,7 @@
 
       <section class="panel" aria-labelledby="graph-heading">
         <h2 id="graph-heading" class="h3">State graph</h2>
-        <p class="muted">Filled: the current State. Blue edge or node: the Transition about to be taken.</p>
+        <p class="muted">Filled: the current State. Blue edge: the Transition the next tick takes. Dashed outline: the State it leads to.</p>
         <div id="graph" role="img" aria-label="State graph of the state machine"></div>
       </section>
 
@@ -88,7 +96,7 @@
 
 const machine = new fsm.FSM();
 machine.addTransition(wander, eat, () =&gt; blackboard.get("hunger") &gt; 2);
-machine.addAnyTransition(flee, () =&gt; blackboard.get("danger") &gt; 0 &amp;&amp; machine.getCurrentState() !== flee);
+machine.addAnyTransition(flee, () =&gt; blackboard.get("danger") &gt; 0); // skipped while already in flee
 machine.changeToState(wander); // required before the first tick
 machine.tick();</code></pre>
       <p><a href="https://github.com/dropecho/ai/blob/main/docs/fsm.js">Full source of this demo</a></p>

@@ -33,8 +33,7 @@ function createSimulation(log) {
   const isExhausted = () => bb.get("energy") <= 0;
   const isRested = () => bb.get("energy") >= RESTED_ENERGY;
   const isSafe = () => bb.get("danger") <= 0;
-  // Without the current-State check the any-transition would re-enter flee on every tick.
-  const dangerAppears = () => bb.get("danger") > 0 && machine.getCurrentState() !== flee;
+  const dangerAppears = () => bb.get("danger") > 0;
 
   const transitions = [
     { from: wander, to: eat, condition: isHungry, text: "hunger > 2" },
@@ -42,7 +41,7 @@ function createSimulation(log) {
     { from: eat, to: wander, condition: isFull, text: "hunger ≤ 0" },
     { from: sleep, to: wander, condition: isRested, text: `energy ≥ ${RESTED_ENERGY}` },
     { from: flee, to: wander, condition: isSafe, text: "danger is off" },
-    { from: null, to: flee, condition: dangerAppears, text: "danger is on, not already fleeing" },
+    { from: null, to: flee, condition: dangerAppears, text: "danger is on" },
   ];
 
   for (const t of transitions) {
@@ -79,14 +78,6 @@ function setupGraph(container) {
   return d3.select(container).graphviz().zoom(false).fade(false).tweenShapes(false);
 }
 
-// toDot marks only the next Transition as active, so the current State gets its own class.
-function markCurrentState(container, stateName) {
-  for (const node of container.querySelectorAll("g.node")) {
-    const title = node.querySelector("title");
-    node.classList.toggle("current", title !== null && title.textContent === stateName);
-  }
-}
-
 function setupPage() {
   const graphEl = document.getElementById("graph");
   const factsEl = document.getElementById("facts");
@@ -109,7 +100,7 @@ function setupPage() {
     const current = sim.machine.getCurrentState().getName();
     renderFacts(factsEl, sim.bb, FACT_KEYS);
     statusEl.textContent = `Tick ${sim.tickCount}: current State is ${current}`;
-    graph.renderDot(sim.machine.toDot()).on("end", () => markCurrentState(graphEl, current));
+    graph.renderDot(sim.machine.toDot());
     const dangerOn = sim.bb.get("danger") > 0;
     dangerButton.textContent = `Danger: ${dangerOn ? "on" : "off"}`;
     dangerButton.setAttribute("aria-pressed", String(dangerOn));
