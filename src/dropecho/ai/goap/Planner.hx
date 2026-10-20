@@ -59,12 +59,14 @@ class Planner {
 					var nextConditions = _applyPostconditions(conditions, action.Postconditions);
 					var nextKey = _stateKey(nextConditions);
 
-					if (!graph.nodes.exists(nextKey)) {
+					var isNewWorldState = graph.nodes.exists(nextKey) == false;
+					if (isNewWorldState) {
 						frontier.enqueue(graph.createNode(nextConditions, nextKey));
 					}
 
 					var existing = graph.edgeData(current.label, nextKey);
-					if (existing == null || existing.Cost > action.Cost) {
+					var isCheapestSoFar = existing == null || existing.Cost > action.Cost;
+					if (isCheapestSoFar) {
 						graph.addUniEdge(current.label, nextKey, action);
 					}
 				}
@@ -84,7 +86,8 @@ class Planner {
 		var cheapestCost = Math.POSITIVE_INFINITY;
 		for (node in goalNodes) {
 			var cost:Float = search.distances[node];
-			if (cost < cheapestCost) {
+			var isCheaper = cost < cheapestCost;
+			if (isCheaper) {
 				cheapestCost = cost;
 				cheapest = node;
 			}
@@ -134,7 +137,8 @@ class Planner {
 
 	private function _hasAll(conditions:Array<String>, required:Array<String>):Bool {
 		for (condition in required) {
-			if (conditions.indexOf(condition) < 0) {
+			var isMissing = conditions.indexOf(condition) < 0;
+			if (isMissing) {
 				return false;
 			}
 		}
@@ -144,7 +148,8 @@ class Planner {
 	private function _applyPostconditions(conditions:Array<String>, postconditions:Array<String>):Array<String> {
 		var result = conditions.copy();
 		for (post in postconditions) {
-			if (result.indexOf(post) < 0) {
+			var isNew = result.indexOf(post) < 0;
+			if (isNew) {
 				result.push(post);
 			}
 		}
