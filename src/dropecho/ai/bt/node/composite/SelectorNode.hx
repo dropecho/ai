@@ -1,9 +1,5 @@
 package dropecho.ai.bt.node.composite;
 
-using Lambda;
-
-import dropecho.ai.bt.node.Node;
-
 @:expose("bt.SelectorNode")
 class SelectorNode extends CompositeNode {
 	public function new(children:Array<Node>) {

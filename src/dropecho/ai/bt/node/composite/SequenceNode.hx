@@ -1,7 +1,5 @@
 package dropecho.ai.bt.node.composite;
 
-using Lambda;
-
 @:expose("bt.SequenceNode")
 class SequenceNode extends CompositeNode {
 	public function new(children:Array<Node>) {
