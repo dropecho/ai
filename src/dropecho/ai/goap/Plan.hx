@@ -85,7 +85,7 @@ class Plan {
 	}
 
 	/**
-	 * Drops finished Actions from the front and says whether none are left; asks the world state provider at most once.
+	 * Drops finished Actions from the front and says whether none are left; asks the world state provider at most once per call.
 	 *
 	 * @return True if no Actions are left.
 	 */

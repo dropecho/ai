@@ -115,27 +115,33 @@ Transitions are stored by State name, so give each State a distinct `getName()`.
 ## GOAP planner
 
 An `Action` has a name, an update function, a cost, preconditions and postconditions
-(condition names). The `Planner` finds the cheapest sequence of Actions that makes the
-goal's conditions true, starting from no conditions, or returns `null`.
+(condition names). A `Goal` lists the condition names the agent wants true. The `Planner`
+asks a world state provider (a `() -> Array<String>` returning the condition names true right
+now) where the game is, finds the cheapest sequence of Actions that makes the Goal true from
+there, or returns `null`. Without a provider it plans from no conditions.
 
 ```haxe
 import dropecho.ai.goap.Action;
+import dropecho.ai.goap.Goal;
 import dropecho.ai.goap.Planner;
-import dropecho.ai.goap.State;
 
-var findWeapon = new Action("find_weapon", dt -> {}, 1, [], ["found_weapon"]);
-var getWeapon = new Action("get_weapon", dt -> {}, 1, ["found_weapon"], ["has_weapon"]);
+var world:Array<String> = []; // the condition names true in the game
+var findWeapon = new Action("find_weapon", dt -> world.push("found_weapon"), 1, [], ["found_weapon"]);
+var getWeapon = new Action("get_weapon", dt -> world.push("has_weapon"), 1, ["found_weapon"], ["has_weapon"]);
 
-var plan = new Planner(new State(["has_weapon"]), [getWeapon, findWeapon]).generatePlan();
+var plan = new Planner(new Goal(["has_weapon"]), [getWeapon, findWeapon], () -> world).generatePlan();
 // plan runs find_weapon, then get_weapon
 
+plan.currentAction(); // the Action running now, or null
+plan.remainingActions(); // the Actions left, as an Array
 var done = plan.update(dt); // call every tick; true when every Action is done
 ```
 
-Each tick the Plan updates its front Action and drops it once its done check is true. The
-done check is the optional last constructor argument (`postMatcher`, a `() -> Bool`); it
-defaults to always true. With the default, the first `update` runs the first Action and then
-drops every Action, so pass a real done check to each Action that should take time.
+Each tick the Plan updates its front Action and drops it once it is done. An Action without
+a done check of its own is done when all its postconditions are in the world state; the
+Planner hands its provider to the Plan for that. To decide differently, pass a done check
+(a `() -> Bool`) as the last `Action` constructor argument. Creating a Plan that holds an
+Action with neither a done check nor a world state provider throws.
 
 ## Utility
 
