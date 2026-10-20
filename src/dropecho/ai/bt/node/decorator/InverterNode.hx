@@ -21,7 +21,7 @@ class InverterNode extends DecoratorNode {
 	 * @return FAILURE if the child succeeded, SUCCESS if it failed, RUNNING if it is still running.
 	 */
 	public function execute(deltaTime:Float):NODE_STATUS {
-		var status = this.child.execute(deltaTime);
+		var status = executeChild(deltaTime);
 
 		switch (status) {
 			case NODE_STATUS.SUCCESS:

@@ -50,7 +50,7 @@ class GuardNode extends DecoratorNode implements IAbortsLowerPriority {
 			}
 		}
 
-		var status = this.child.execute(deltaTime);
+		var status = executeChild(deltaTime);
 		isChildRunning = status == NODE_STATUS.RUNNING;
 		return status;
 	}

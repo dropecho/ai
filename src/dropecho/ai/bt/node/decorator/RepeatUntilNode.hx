@@ -21,7 +21,7 @@ class RepeatUntilNode extends DecoratorNode {
 	 * @return SUCCESS if the child failed, otherwise RUNNING.
 	 */
 	public function execute(deltaTime:Float):NODE_STATUS {
-		var status = child.execute(deltaTime);
+		var status = executeChild(deltaTime);
 
 		var keepRepeating = status == NODE_STATUS.SUCCESS || status == NODE_STATUS.RUNNING;
 		if (keepRepeating) {

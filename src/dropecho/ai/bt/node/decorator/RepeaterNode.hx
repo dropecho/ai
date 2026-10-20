@@ -36,13 +36,13 @@ class RepeaterNode extends DecoratorNode {
 	 */
 	public function execute(deltaTime:Float):NODE_STATUS {
 		if (times == null) {
-			var status = child.execute(deltaTime);
+			var status = executeChild(deltaTime);
 			childRunning = status == NODE_STATUS.RUNNING;
 			return NODE_STATUS.RUNNING;
 		}
 
 		while (successes < times) {
-			var status = child.execute(deltaTime);
+			var status = executeChild(deltaTime);
 			switch (status) {
 				case NODE_STATUS.RUNNING:
 					childRunning = true;
