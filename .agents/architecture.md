@@ -11,7 +11,8 @@ src/dropecho/ai/
 ├── BlackboardKey.hx           # Typed key for Blackboard values (a String at runtime)
 ├── TaskBank.hx                # Task registry (name → Task) and the Task typedef
 ├── bt/
-│   ├── BehaviorTree.hx        # Behavior tree root; gives the Blackboard to every node
+│   ├── BehaviorTree.hx        # Behavior tree root: Blackboard, delta time, halt, tracer, labels, toText/toDot
+│   ├── trace/                 # ITreeTracer, StatusRecorder, TracedChild, TreeDump
 │   └── node/
 │       ├── Node.hx            # Node interface + IExecutable<T>
 │       ├── NODE_STATUS.hx     # Status enum abstract: SUCCESS, FAILURE, RUNNING

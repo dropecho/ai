@@ -102,6 +102,8 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 | A RUNNING node that its parent will not tick again is halted | `CompositeNode.runChildren` / `halt`, `DecoratorNode.halt`, `BehaviorTree.halt` |
 | Every node in a tick gets the same delta time | `BehaviorTree.execute(deltaTime)` passes it down; composites and decorators forward it |
 | A Condition node never returns RUNNING | `ConditionNode.execute` |
+| With a tracer set, every node a parent executes is reported after it returns, and every node a parent halts before its halt runs; tracing never changes behaviour | `TracedChild`, used by `CompositeNode`, `ParallelNode`, `DecoratorNode`, `BehaviorTree` |
+| `children()` never exposes a parent's own child array | `IParentNode.children` returns a copy |
 | A Guard never runs its child in a tick where it found its Check false | `GuardNode.execute` |
 | A lower-priority abort happens only in a non-reactive composite with a running child, from a Guard before it whose Check changed in its favour | `CompositeNode._abortLowerPriorityIfAsked`, `GuardNode.wantsToAbortLowerPriority` |
 | A Parallel ticks a child at most once per run after it finishes, and halts every child still RUNNING when it decides | `ParallelNode.execute` |
@@ -146,6 +148,17 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
   `BehaviorTree.execute` and every node receives it. Owner: the `deltaTime` parameter.
 - **Halt:** telling a RUNNING node its parent will not tick it again for now, so it stops
   work in progress and clears per-run state. Owner: `Node.halt`.
+- **Parent node:** a node with children (Composite, Parallel, Decorator, or a whole tree)
+  that can list them and passes a tracer on to its subtree. Owner: `bt.node.IParentNode`.
+- **Tracer:** game or debug code told about every node a tree executes (with its Status and
+  delta time) or halts; parents report for their children. Owner: `bt.ITreeTracer`, set
+  with `BehaviorTree.setTracer`.
+- **Status recorder:** a tracer that keeps each node's last Status and whether it was halted
+  until cleared. Owner: `bt.StatusRecorder`.
+- **Label:** a readable name for a node in dumps, set on the tree or the node's own (a Task
+  node's Task name). Owner: `BehaviorTree.setLabel` / `labelOf`, `ILabeled`.
+- **Tree dump:** the tree written out as indented text or Graphviz DOT, with Statuses from a
+  Status recorder. Owner: `BehaviorTree.toText` / `toDot`.
 - **Status:** a node's answer for this tick: SUCCESS, FAILURE or RUNNING (not finished,
   ask again next tick). Owner: `bt.node.NODE_STATUS`.
 - **Task:** a game-defined function that does the work of a leaf: it gets the Blackboard

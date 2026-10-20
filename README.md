@@ -110,6 +110,15 @@ work in progress and start afresh next time. For leaves that are classes rather 
 functions, extend `LeafNode`, implement `execute(deltaTime)` (it is abstract; no `override`)
 and override `halt()` if the leaf has work to stop. `tree.halt()` stops the whole tree.
 
+**Tracing and dumps.** `tree.setTracer(tracer)` reports every node the tree runs or halts:
+`onTick(node, status, deltaTime)` after a node returns (children before parents) and
+`onHalt(node)` when a running node is abandoned. Parents do the reporting, so leaves need no
+changes, and in JS any object with those two methods works. `bt.StatusRecorder` remembers each
+node's last Status and halts; call `recorder.clear()` before a tick, then `tree.toText(recorder)`
+prints an indented tree with each node's Status and `(halted)` marks, and `tree.toDot(recorder)`
+gives Graphviz DOT. Name nodes with `tree.setLabel(node, "eat when hungry")`; Task nodes are
+labelled with their Task name.
+
 ## State machine
 
 Implement `IState`, add transitions with a condition, set the starting State, then

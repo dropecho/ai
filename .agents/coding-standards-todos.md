@@ -43,7 +43,7 @@ in code. Nothing here is implemented until approved. Terms are from
 | F6 | Feature | Time propagation (`execute(dt)` or a clock) plus a Wait leaf | Unblocks every time-based node | — | done |
 | F7 | Feature | Timeout and Cooldown decorators | Heavily used in game AI | — | done |
 | F8 | Feature | Observer aborts (self / lower priority) on the guard | Unreal/Behavior Designer model; cheaper and more explicit than reactive everywhere | — | done |
-| F9 | Feature (proposed) | Typed blackboard values (not only Float) and a tick tracing hook | Trees can hold targets/positions/enums; debuggable | — | open |
+| F9 | Feature | Typed blackboard values (not only Float) and a tick tracing hook | Trees can hold targets/positions/enums; debuggable | — | done |
 | F10 | Feature (proposed) | ForceFailure, and common-name aliases (ForceSuccess for Succeeder, UntilFailure for RepeatUntil, Fallback for Selector) | Familiar vocabulary | — | open |
 | F11 | Feature (proposed) | Random / weighted selector and shuffled sequence, with an injectable RNG | Variety in behaviour, reproducible | — | open |
 | F12 | Feature (proposed) | Utility selector that orders children by score each tick | Bridges to the utility module | — | open |
