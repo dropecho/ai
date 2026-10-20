@@ -33,11 +33,20 @@
         tick is highlighted. A RUNNING child keeps the Composite's cursor (▸) and is asked again
         next tick, without re-running the children before it.
       </p>
+      <p>
+        Tick <strong>Reactive root</strong> to rebuild the tree with a Reactive Selector at the
+        root. It starts from its first child every tick, so getting hungry while sleeping
+        interrupts the sleep: <code>is_hungry</code> is checked again each tick and eating takes
+        over. The interrupted child is not told; it is simply not ticked again until it is
+        reached again, and the inner Sequence's ▸ still points at <code>sleep</code>, so the nap
+        picks up where it left off once the agent has eaten.
+      </p>
 
       <div class="controls" role="group" aria-label="Tree controls">
         <button id="step" class="primary">Step</button>
         <button id="play" aria-pressed="false">Play</button>
         <button id="reset">Reset</button>
+        <label><input id="reactive" type="checkbox" /> Reactive root</label>
         <span id="tick-status" aria-live="polite"></span>
       </div>
 
@@ -60,7 +69,8 @@
           </div>
           <p class="muted">
             <code>is_hungry</code>: hunger ≥ 3. <code>is_tired</code>: energy ≤ 1.
-            <code>eat</code> and <code>sleep</code> answer RUNNING until done.
+            <code>eat</code> and <code>sleep</code> answer RUNNING until done; sleeping makes the
+            agent hungrier.
           </p>
         </section>
 
@@ -83,7 +93,10 @@ const tree = new bt.BehaviorTree(
   ]),
 );
 tree.init(blackboard);
-tree.execute(); // once per tick</code></pre>
+tree.execute(); // once per tick
+
+// Reactive root: re-checks "eat when hungry" every tick, even while sleeping.
+new bt.ReactiveSelectorNode([/* same children */]);</code></pre>
       <p><a href="https://github.com/dropecho/ai/blob/main/docs/behavior-tree.js">Full source of this demo</a></p>
     </main>
 
