@@ -24,7 +24,7 @@ class UtilityAgent {
 	}
 
 	inline private function foldToLowestMotive(motive:Motive, result:Motive):Motive {
-		if (result?.value < motive.value) {
+		if (result != null && result.value < motive.value) {
 			return result;
 		}
 		return motive;
