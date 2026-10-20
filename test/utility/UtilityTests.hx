@@ -33,14 +33,28 @@ class UtilityTests extends Test {
 		Assert.equals(hunger, result);
 	}
 
-	public function test_equal_values_returns_a_motive() {
+	public function test_equal_values_returns_the_first_motive() {
 		var util = new UtilityAgent();
 		var a = new Motive("a", 0.5);
 		var b = new Motive("b", 0.5);
+		var c = new Motive("c", 0.5);
 		util.motives.push(a);
 		util.motives.push(b);
+		util.motives.push(c);
 		var result = util.getMostImportantMotive();
-		Assert.notNull(result);
+		Assert.equals(a, result);
+	}
+
+	public function test_tie_for_lowest_returns_the_first_of_the_tied() {
+		var util = new UtilityAgent();
+		var high = new Motive("high", 0.9);
+		var first = new Motive("first", 0.2);
+		var second = new Motive("second", 0.2);
+		util.motives.push(high);
+		util.motives.push(first);
+		util.motives.push(second);
+		var result = util.getMostImportantMotive();
+		Assert.equals(first, result);
 	}
 
 	public function test_lowest_value_first_in_list() {

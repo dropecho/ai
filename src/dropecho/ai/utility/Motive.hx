@@ -35,7 +35,7 @@ class UtilityAgent {
 	public function new() {}
 
 	/**
-	 * Finds the Motive with the lowest value; on a tie the later Motive in `motives` wins.
+	 * Finds the Motive with the lowest value; on a tie the earlier Motive in `motives` wins.
 	 *
 	 * @return The most urgent Motive, or null if there are none.
 	 */
@@ -44,7 +44,8 @@ class UtilityAgent {
 	}
 
 	inline private function foldToLowestMotive(motive:Motive, result:Motive):Motive {
-		if (result != null && result.value < motive.value) {
+		var isResultAtLeastAsUrgent = result != null && result.value <= motive.value;
+		if (isResultAtLeastAsUrgent) {
 			return result;
 		}
 		return motive;

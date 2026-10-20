@@ -50,4 +50,25 @@ class Blackboard {
 	inline public function decrement(key:String):Float {
 		return _facts.set(key, get(key) - 1);
 	}
+
+	/**
+	 * Lists the facts that have been set, in ascending order of name so every target gives the same order.
+	 *
+	 * @return A new Array of the fact names; changing it does not change the Blackboard.
+	 */
+	public function keys():Array<String> {
+		var names = [for (name in _facts.keys()) name];
+		names.sort(compareNames);
+		return names;
+	}
+
+	static function compareNames(a:String, b:String):Int {
+		if (a < b) {
+			return -1;
+		}
+		if (a > b) {
+			return 1;
+		}
+		return 0;
+	}
 }
