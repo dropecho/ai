@@ -32,17 +32,20 @@ class Plan {
 	}
 
 	/**
-	 * Runs the current Action's update, then drops every finished Action from the front.
+	 * Drops finished Actions from the front, runs the update of the first one not yet done, then drops
+	 * it too if that finished it. An Action that is already done is never updated.
 	 *
 	 * @param deltaTime - The time since the last update, in the game's time unit.
 	 * @return True if the Plan is completed.
 	 */
 	public function update(deltaTime:Float = 0):Bool {
-		if (_actions.length > 0) {
-			_actions
-				.peek()
-				.update(deltaTime);
+		if (isCompleted()) {
+			return true;
 		}
+
+		_actions
+			.peek()
+			.update(deltaTime);
 
 		return isCompleted();
 	}

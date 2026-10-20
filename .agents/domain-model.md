@@ -62,7 +62,7 @@ never re-enters the current State; only an explicit `changeToState(S)` re-runs o
 
 ```
 new Plan --an Action has no done check and there is no world state provider--> throws
-Actions pending --update(dt): front Action.update(dt)--> pending
+Actions pending --update(dt): drop done Actions, then the first not done .update(dt)--> pending
                 --front Action is done (its done check, or else all its postconditions in
                   the provider's current world state; checked on update and isCompleted)--> front dropped
                 --no Actions left--> completed
@@ -89,6 +89,7 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 | Every Action in a Plan has a way to finish: its own done check, or a world state provider on the Plan | `Plan.new` throws |
 | Condition names containing `,` stay distinct in a world state | `Planner._stateKey` (JSON-encoded sorted names) |
 | Only the Plan changes its remaining Actions | `Plan._actions` is private |
+| An Action that is already done is never updated | `Plan.update` drops done Actions before updating |
 | A Plan runs its Actions in the order the Planner chose | `Plan.new` enqueues one at a time |
 
 ## Glossary

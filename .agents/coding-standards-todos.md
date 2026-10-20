@@ -58,7 +58,7 @@ in code. Nothing here is implemented until approved. Terms are from
 | A8 | API change · low value | Make `LeafNode` abstract too (it is exported and subclassed) | Same as R11 for leaves | R11 | done |
 | A9 | API change · low value | `BehaviorTree.new(root = null)` defaults a parameter that it then rejects; make it required | Signature says the rule | — | done |
 | B13 | Bug · low value | A condition name containing `,` collides in the World state key | Removes a trap | R5 | done |
-| B14 | Bug (question) · low value | `Plan.update` ticks the front Action once even if its done check is already true | — | — | open |
+| B14 | Bug (question) · low value | `Plan.update` ticks the front Action once even if its done check is already true | — | — | done |
 | B15 | Bug (question) · low value | `toDot()` asks every Condition to mark the active edge, so drawing runs game callbacks | — | — | kept and documented in `toDot` |
 | R12 | Refactor [readability] · low value | Shorten `FSM.addTransition`'s get-or-create | Shorter | — | done |
 | R13 | Refactor [readability] · low value | Remove unused imports and `using Lambda` | Less noise | — | done |

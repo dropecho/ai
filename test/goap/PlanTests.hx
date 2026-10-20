@@ -162,4 +162,18 @@ class PlanTests extends Test {
 		Assert.isTrue(_plan.isCompleted());
 		Assert.equals(1, asked);
 	}
+
+	public function test_update_skips_an_action_that_is_already_done() {
+		var firstTicks = 0;
+		var secondTicks = 0;
+		var first = new Action("first", _ -> firstTicks++, 0, [], [], null, () -> true);
+		var second = new Action("second", _ -> secondTicks++, 0, [], [], null, () -> false);
+		_plan = new Plan([first, second]);
+
+		_plan.update(0);
+
+		Assert.equals(0, firstTicks);
+		Assert.equals(1, secondTicks);
+		Assert.equals(second, _plan.currentAction());
+	}
 }
