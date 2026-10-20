@@ -26,7 +26,7 @@
 
 ## Abstract Base Nodes
 
-- `CompositeNode.execute()` and `DecoratorNode.execute()` throw `NotImplementedException` — subclasses must override.
+- `CompositeNode` and `DecoratorNode` are abstract classes: subclasses implement `execute()` without `override`. `LeafNode.execute()` throws `NotImplementedException` until overridden.
 - Do not instantiate `CompositeNode` or `DecoratorNode` directly.
 
 ## BT Node State

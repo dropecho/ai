@@ -95,4 +95,4 @@ var done = plan.update(dt);
 2. **`CurrentIterator` for resumable composite traversal** — a composite keeps its position across ticks.
 3. **`TaskBank` as indirection** — tree structure is decoupled from behaviour; Tasks are registered globally by name.
 4. **`AbstractMap` / `AbstractArray` / `AbstractFunc` in public APIs** — JS callers pass plain objects, C# callers native types.
-5. **`NotImplementedException` on base nodes** — `CompositeNode`, `DecoratorNode` and `LeafNode` `execute()` throw; subclasses override.
+5. **Abstract base nodes** — `CompositeNode` and `DecoratorNode` are abstract classes, so a missing `execute()` is a compile error; `LeafNode.execute()` throws `NotImplementedException` until overridden.
