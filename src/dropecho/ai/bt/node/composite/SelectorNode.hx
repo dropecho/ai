@@ -17,7 +17,8 @@ class SelectorNode extends CompositeNode {
 		}
 
 		if (status == NODE_STATUS.FAILURE) {
-			if (!this.childIterator.hasNext()) {
+			var isOnLastChild = this.childIterator.hasNext() == false;
+			if (isOnLastChild) {
 				this.childIterator.reset();
 				return NODE_STATUS.FAILURE;
 			}

@@ -90,7 +90,8 @@ class FSM {
 			}
 		}
 
-		if (!_transitions.exists(_currentState?.getName())) {
+		var currentStateHasTransitions = _transitions.exists(_currentState?.getName());
+		if (currentStateHasTransitions == false) {
 			return null;
 		}
 
