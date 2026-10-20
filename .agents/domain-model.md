@@ -68,6 +68,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 |---|---|
 | A missing Blackboard fact reads as 0 | `Blackboard.get` (also used by `increment` / `decrement`) |
 | A behavior tree has a root | `BehaviorTree.new` throws |
+| A Task node only refers to a registered Task: an unknown name throws when the node is built | `TaskBank.get` |
+| Every Composite and Decorator defines `execute` | Compiler: `CompositeNode` and `DecoratorNode` are abstract classes |
 | A state machine ticks only once it has a State | `FSM.tick` throws |
 | A composite returns to its first child whenever it returns SUCCESS or FAILURE | `SelectorNode.execute`, `SequenceNode.execute` |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
@@ -148,7 +150,8 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 - **Planner:** finds the cheapest Plan from the empty world state to a Goal using the given
   Actions, or none. Owner: `goap.Planner.generatePlan`.
 - **Plan:** the Actions to run in order. Each tick the front Action updates, and Actions
-  whose done check is true are dropped. Owner: `goap.Plan`.
+  whose done check is true are dropped. Owner: `goap.Plan`; `currentAction` is the front
+  Action, and iterating a Plan gives the remaining Actions in order.
 
 ### Utility
 
@@ -162,7 +165,7 @@ Actions pending --update(dt): front Action.update(dt)--> pending
 - **Child cursor:** a composite's position in its children. Owner:
   `dropecho.util.CurrentIterator`. Its `next()` returns the current child and moves on, and
   `hasNext()` means "is there a child after the current one".
-- **NotImplementedException:** thrown by base nodes whose `execute` must be overridden.
+- **NotImplementedException:** thrown by `LeafNode.execute`, which game code must override.
   Owner: `dropecho.util.NotImplementedException`.
 
 ## Explain test
