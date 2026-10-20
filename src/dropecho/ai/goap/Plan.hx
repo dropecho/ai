@@ -10,23 +10,8 @@ import dropecho.ds.Queue;
  */
 @:expose("goap.Plan")
 class Plan {
-	/** Internal queue of the remaining Actions; use `currentAction` or iterate the Plan instead. */
-	public var _actions(default, null):Queue<Action> = new Queue<Action>();
-
+	private var _actions:Queue<Action> = new Queue<Action>();
 	private var _worldState:Null<WorldStateProvider>;
-
-	/** The number of Actions left. */
-	public var length(get, null):Int;
-
-	inline function get_length():Int return _actions.length;
-
-	/** The Action running now, or null once the Plan is completed. */
-	public var currentAction(get, never):Null<Action>;
-
-	function get_currentAction():Null<Action> {
-		var hasActions = _actions.length > 0;
-		return hasActions ? _actions.peek() : null;
-	}
 
 	/**
 	 * Creates a Plan that runs the given Actions in order.
@@ -49,17 +34,36 @@ class Plan {
 	/**
 	 * Runs the current Action's update, then drops every finished Action from the front.
 	 *
-	 * @param dT - The time since the last update, in the game's time unit.
+	 * @param deltaTime - The time since the last update, in the game's time unit.
 	 * @return True if the Plan is completed.
 	 */
-	public function update(dT:Float = 0):Bool {
+	public function update(deltaTime:Float = 0):Bool {
 		if (_actions.length > 0) {
 			_actions
 				.peek()
-				.update(dT);
+				.update(deltaTime);
 		}
 
 		return isCompleted();
+	}
+
+	/**
+	 * Gives the Action running now, without dropping finished ones first.
+	 *
+	 * @return The front Action, or null once no Actions are left.
+	 */
+	public function currentAction():Null<Action> {
+		var hasActions = _actions.length > 0;
+		return hasActions ? _actions.peek() : null;
+	}
+
+	/**
+	 * Counts the Actions left, without dropping finished ones first.
+	 *
+	 * @return The number of remaining Actions.
+	 */
+	public function length():Int {
+		return _actions.length;
 	}
 
 	/**

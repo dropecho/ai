@@ -60,7 +60,7 @@ class PlanTests extends Test {
 		// First update: ticks action1 (_actionDone = true) → action1 completes → action2 is now current
 		_plan.update(0);
 		Assert.isTrue(_actionDone);
-		Assert.equals(1, _plan.length);
+		Assert.equals(1, _plan.length());
 
 		// Second update: ticks action2 (action2Done = true) → action2 completes
 		_plan.update(0);
@@ -74,23 +74,23 @@ class PlanTests extends Test {
 		_action1.doneCheck = () -> _actionDone;
 		_plan = new Plan([_action1, action2]);
 
-		Assert.equals(2, _plan.length);
+		Assert.equals(2, _plan.length());
 
 		// After update: action1 ticked (_actionDone=true) → both actions dequeued
 		_plan.update(0);
-		Assert.equals(0, _plan.length);
+		Assert.equals(0, _plan.length());
 		Assert.isTrue(_plan.isCompleted());
 	}
 
 	public function test_current_action_is_the_front_action() {
 		var action2 = unfinished("second");
 		_plan = new Plan([_action1, action2]);
-		Assert.equals(_action1, _plan.currentAction);
+		Assert.equals(_action1, _plan.currentAction());
 	}
 
 	public function test_current_action_is_null_when_completed() {
 		_plan = new Plan();
-		Assert.isNull(_plan.currentAction);
+		Assert.isNull(_plan.currentAction());
 	}
 
 	public function test_iterating_a_plan_gives_actions_in_order() {
@@ -109,7 +109,7 @@ class PlanTests extends Test {
 	public function test_changing_remaining_actions_does_not_change_the_plan() {
 		_plan = new Plan([_action1]);
 		_plan.remainingActions().pop();
-		Assert.equals(1, _plan.length);
+		Assert.equals(1, _plan.length());
 	}
 
 	public function test_an_action_without_a_done_check_is_done_when_its_postconditions_are_in_the_world_state() {
