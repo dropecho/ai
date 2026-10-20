@@ -11,7 +11,10 @@ class Plan {
 
 	public function new(actions:AbstractArray<Action> = null) {
 		if (actions != null) {
-			_actions.enqueueMany(actions);
+			// Queue.enqueueMany reverses order on JS (dropecho.ds 2.0.0), so enqueue one at a time.
+			for (action in actions) {
+				_actions.enqueue(action);
+			}
 		}
 	}
 
