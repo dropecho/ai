@@ -97,4 +97,16 @@ class PlanTests extends Test {
 		var actions = [for (action in _plan) action];
 		Assert.same([_action1, action2], actions);
 	}
+
+	public function test_remaining_actions_gives_actions_in_order() {
+		var action2 = new Action("second", _ -> {});
+		_plan = new Plan([_action1, action2]);
+		Assert.same([_action1, action2], _plan.remainingActions());
+	}
+
+	public function test_changing_remaining_actions_does_not_change_the_plan() {
+		_plan = new Plan([_action1]);
+		_plan.remainingActions().pop();
+		Assert.equals(1, _plan.length);
+	}
 }

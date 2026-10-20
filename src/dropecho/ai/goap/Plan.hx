@@ -64,6 +64,15 @@ class Plan {
 	}
 
 	/**
+	 * Copies the remaining Actions into a new Array, in the order they will run; works from every target.
+	 *
+	 * @return The remaining Actions; changing the Array does not change the Plan.
+	 */
+	public function remainingActions():Array<Action> {
+		return [for (action in _actions) action];
+	}
+
+	/**
 	 * Drops finished Actions from the front, by their done check, and says whether none are left.
 	 *
 	 * @return True if no Actions are left.
