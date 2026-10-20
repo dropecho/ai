@@ -47,6 +47,8 @@ The deciding status is SUCCESS for a Selector and FAILURE for a Sequence. Within
 composite **runs on through its children** until one returns the deciding status, the last
 child finishes, or a child is RUNNING. A composite returns RUNNING only when a child is
 RUNNING; next tick it resumes that child without re-running the children before it.
+A reactive composite instead starts from its first child every tick, so it never resumes a
+child; a child it stops reaching is not halted, just not ticked until reached again.
 
 ### State machine
 
@@ -83,6 +85,7 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 | A Transition is taken only from the State object it was added for, even if another State has the same name | `FSM._transitions` (an `ObjectMap` keyed by State) |
 | A composite returns to its first child whenever it returns SUCCESS or FAILURE | `CompositeNode.runChildren` |
 | A composite returns RUNNING only when its current child returned RUNNING | `CompositeNode.runChildren` |
+| A reactive composite starts every tick at its first child | `ReactiveSelectorNode.execute`, `ReactiveSequenceNode.execute` |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
 | Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
 | A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from the world state provider's current world state (the empty one if none is given) | `Planner.generatePlan` (Dijkstra over every reachable world state) |
@@ -122,6 +125,10 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
     Owner: `SelectorNode`.
   - **Sequence:** fails at the first child that fails; succeeds if all succeed.
     Owner: `SequenceNode`.
+  - **Reactive Selector:** a Selector that starts from its first child every tick, so a
+    higher-priority child can take over from a RUNNING one. Owner: `ReactiveSelectorNode`.
+  - **Reactive Sequence:** a Sequence that starts from its first child every tick, so earlier
+    conditions are re-checked while a later child is RUNNING. Owner: `ReactiveSequenceNode`.
 - **Decorator:** a node that wraps one child and changes its Status. Owner:
   `bt.node.decorator.DecoratorNode`.
   - **Inverter:** swaps SUCCESS and FAILURE. Owner: `InverterNode`.
@@ -195,7 +202,8 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 
 Game code builds an agent's AI from one of four tools. A behavior tree is given a
 Blackboard and executed each tick; its Composites run their children in order, running on
-to the next child in the same tick until one decides or is RUNNING, and Decorators change
+to the next child in the same tick until one decides or is RUNNING (reactive ones start
+again from the first child every tick), and Decorators change
 a child's Status, down to Task nodes that run Tasks from the
 Task registry. A state machine ticks its current State, then takes the first Transition
 whose Condition is true, any-transitions first. A Planner searches every World state
