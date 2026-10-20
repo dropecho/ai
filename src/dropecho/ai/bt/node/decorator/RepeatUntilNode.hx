@@ -6,7 +6,7 @@ class RepeatUntilNode extends DecoratorNode {
 		super(child);
 	}
 
-	public override function execute():NODE_STATUS {
+	public function execute():NODE_STATUS {
 		var status = child.execute();
 
 		if (status == NODE_STATUS.SUCCESS || status == NODE_STATUS.RUNNING) {

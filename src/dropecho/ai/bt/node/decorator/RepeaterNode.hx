@@ -6,7 +6,7 @@ class RepeaterNode extends DecoratorNode {
 		super(child);
 	}
 
-	public override function execute():NODE_STATUS {
+	public function execute():NODE_STATUS {
 		child.execute();
 		return NODE_STATUS.RUNNING;
 	}

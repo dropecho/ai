@@ -1,12 +1,10 @@
 package dropecho.ai.bt.node.composite;
 
-import dropecho.util.NotImplementedException;
-
 using Lambda;
 
 import dropecho.util.CurrentIterator;
 
-class CompositeNode implements Node {
+abstract class CompositeNode implements Node {
 	private var children:Array<Node>;
 	private var childIterator:CurrentIterator<Node>;
 	private var context:Blackboard;
@@ -28,7 +26,5 @@ class CompositeNode implements Node {
 		this.children.iter(initChild);
 	}
 
-	public function execute():NODE_STATUS {
-		throw new NotImplementedException();
-	}
+	abstract public function execute():NODE_STATUS;
 }

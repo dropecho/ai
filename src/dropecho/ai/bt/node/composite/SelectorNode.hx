@@ -10,7 +10,7 @@ class SelectorNode extends CompositeNode {
 		super(children);
 	}
 
-	public override function execute():NODE_STATUS {
+	public function execute():NODE_STATUS {
 		var status = this.childIterator
 			.current()
 			.execute();

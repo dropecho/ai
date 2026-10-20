@@ -8,7 +8,7 @@ class SequenceNode extends CompositeNode {
 		super(children);
 	}
 
-	public override function execute():NODE_STATUS {
+	public function execute():NODE_STATUS {
 		var childStatus = this.childIterator
 			.current()
 			.execute();
