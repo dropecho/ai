@@ -7,6 +7,32 @@ $hx_exports["utility"] = $hx_exports["utility"] || {};
 $hx_exports["dropecho"] = $hx_exports["dropecho"] || {};
 $hx_exports["dropecho"]["ds"] = $hx_exports["dropecho"]["ds"] || {};
 $hx_exports["dropecho"]["ds"]["graph"] = $hx_exports["dropecho"]["ds"]["graph"] || {};
+class HxOverrides {
+	static substr(s,pos,len) {
+		if(len == null) {
+			len = s.length;
+		} else if(len < 0) {
+			if(pos == 0) {
+				len = s.length + len;
+			} else {
+				return "";
+			}
+		}
+		return s.substr(pos,len);
+	}
+	static remove(a,obj) {
+		let i = a.indexOf(obj);
+		if(i == -1) {
+			return false;
+		}
+		a.splice(i,1);
+		return true;
+	}
+	static now() {
+		return Date.now();
+	}
+}
+HxOverrides.__name__ = "HxOverrides";
 class Lambda {
 	static iter(it,f) {
 		let x = $getIterator(it);
@@ -28,8 +54,8 @@ class Lambda {
 		return null;
 	}
 }
-Lambda.__name__ = true;
-Math.__name__ = true;
+Lambda.__name__ = "Lambda";
+Math.__name__ = "Math";
 class Reflect {
 	static fields(o) {
 		let a = [];
@@ -60,7 +86,7 @@ class Reflect {
 		return true;
 	}
 }
-Reflect.__name__ = true;
+Reflect.__name__ = "Reflect";
 class Std {
 	static string(s) {
 		return js_Boot.__string_rec(s,"");
@@ -73,15 +99,17 @@ class Std {
 		}
 	}
 }
-Std.__name__ = true;
+Std.__name__ = "Std";
 class StringTools {
 	static replace(s,sub,by) {
 		return s.split(sub).join(by);
 	}
 }
-StringTools.__name__ = true;
+StringTools.__name__ = "StringTools";
 class dropecho_ai_Blackboard {
 	constructor() {
+		this._listeners = dropecho_interop_AbstractMap._new();
+		this._values = dropecho_interop_AbstractMap._new();
 		this._facts = dropecho_interop_AbstractMap._new();
 	}
 	get(key) {
@@ -92,28 +120,103 @@ class dropecho_ai_Blackboard {
 		}
 	}
 	set(key,value) {
+		let isChange = Object.prototype.hasOwnProperty.call(this._facts,key == null ? "null" : "" + key) ? this._facts[key == null ? "null" : "" + key] : 0;
 		this._facts[key == null ? "null" : "" + key] = value;
+		if(isChange != value) {
+			this.notifyChange(key);
+		}
 		return value;
 	}
 	increment(key) {
-		let this1 = this._facts;
-		let value = (Object.prototype.hasOwnProperty.call(this._facts,key == null ? "null" : "" + key) ? this._facts[key == null ? "null" : "" + key] : 0) + 1;
-		this1[key == null ? "null" : "" + key] = value;
-		return value;
+		return this.set(key,(Object.prototype.hasOwnProperty.call(this._facts,key == null ? "null" : "" + key) ? this._facts[key == null ? "null" : "" + key] : 0) + 1);
 	}
 	decrement(key) {
-		let this1 = this._facts;
-		let value = (Object.prototype.hasOwnProperty.call(this._facts,key == null ? "null" : "" + key) ? this._facts[key == null ? "null" : "" + key] : 0) - 1;
-		this1[key == null ? "null" : "" + key] = value;
-		return value;
+		return this.set(key,(Object.prototype.hasOwnProperty.call(this._facts,key == null ? "null" : "" + key) ? this._facts[key == null ? "null" : "" + key] : 0) - 1);
 	}
 	keys() {
 		let _g = [];
 		let _g1 = 0;
 		let _g2 = Reflect.fields(this._facts);
 		while(_g1 < _g2.length) _g.push(_g2[_g1++]);
-		_g.sort(dropecho_ai_Blackboard.compareNames);
-		return _g;
+		return dropecho_ai_Blackboard.sortedNames(_g);
+	}
+	getValue(key) {
+		return this.readValue(key);
+	}
+	setValue(key,value) {
+		let isChange = this.readValue(key) != value;
+		this._values[Std.string(key)] = value;
+		if(isChange) {
+			this.notifyChange(key);
+		}
+		return value;
+	}
+	hasValue(key) {
+		return Object.prototype.hasOwnProperty.call(this._values,Std.string(key));
+	}
+	removeValue(key) {
+		let previous = this.readValue(key);
+		let wasHeld = Reflect.deleteField(this._values,key);
+		if(previous != null) {
+			this.notifyChange(key);
+		}
+		return wasHeld;
+	}
+	valueKeys() {
+		let _g = [];
+		let _g1 = 0;
+		let _g2 = Reflect.fields(this._values);
+		while(_g1 < _g2.length) _g.push(_g2[_g1++]);
+		return dropecho_ai_Blackboard.sortedNames(_g);
+	}
+	onChange(key,listener) {
+		let subscription = new dropecho_ai__$Blackboard_ChangeSubscription(listener);
+		let isFirstListener = Object.prototype.hasOwnProperty.call(this._listeners,key == null ? "null" : "" + key) == false;
+		if(isFirstListener) {
+			this._listeners[key == null ? "null" : "" + key] = [];
+		}
+		this._listeners[key == null ? "null" : "" + key].push(subscription);
+		let _gthis = this;
+		return function() {
+			_gthis.removeSubscription(key,subscription);
+		};
+	}
+	removeSubscription(key,subscription) {
+		subscription.isActive = false;
+		let subscriptions = this.listenersOf(key);
+		HxOverrides.remove(subscriptions,subscription);
+		if(subscriptions.length == 0) {
+			Reflect.deleteField(this._listeners,key);
+		}
+	}
+	notifyChange(key) {
+		let _g = 0;
+		let _g1 = this.listenersOf(key).slice();
+		while(_g < _g1.length) {
+			let subscription = _g1[_g];
+			++_g;
+			if(subscription.isActive) {
+				subscription.listener(key);
+			}
+		}
+	}
+	readValue(key) {
+		if(Object.prototype.hasOwnProperty.call(this._values,key == null ? "null" : "" + key)) {
+			return this._values[key == null ? "null" : "" + key];
+		} else {
+			return null;
+		}
+	}
+	listenersOf(key) {
+		if(Object.prototype.hasOwnProperty.call(this._listeners,key == null ? "null" : "" + key)) {
+			return this._listeners[key == null ? "null" : "" + key];
+		} else {
+			return [];
+		}
+	}
+	static sortedNames(names) {
+		names.sort(dropecho_ai_Blackboard.compareNames);
+		return names;
 	}
 	static compareNames(a,b) {
 		if(a < b) {
@@ -126,10 +229,25 @@ class dropecho_ai_Blackboard {
 	}
 }
 $hx_exports["Blackboard"] = dropecho_ai_Blackboard;
-dropecho_ai_Blackboard.__name__ = true;
+dropecho_ai_Blackboard.__name__ = "dropecho.ai.Blackboard";
 Object.assign(dropecho_ai_Blackboard.prototype, {
 	__class__: dropecho_ai_Blackboard
 });
+class dropecho_ai__$Blackboard_ChangeSubscription {
+	constructor(listener) {
+		this.isActive = true;
+		this.listener = listener;
+	}
+}
+dropecho_ai__$Blackboard_ChangeSubscription.__name__ = "dropecho.ai._Blackboard.ChangeSubscription";
+Object.assign(dropecho_ai__$Blackboard_ChangeSubscription.prototype, {
+	__class__: dropecho_ai__$Blackboard_ChangeSubscription
+});
+class dropecho_ai_BlackboardKey {
+	static _new(name) {
+		return name;
+	}
+}
 class dropecho_interop_AbstractMap {
 	static _new(s) {
 		let this1;
@@ -198,23 +316,32 @@ class dropecho_ai_TaskBank {
 	}
 }
 $hx_exports["TaskBank"] = dropecho_ai_TaskBank;
-dropecho_ai_TaskBank.__name__ = true;
+dropecho_ai_TaskBank.__name__ = "dropecho.ai.TaskBank";
+class dropecho_ai_bt_node_IParentNode {
+}
+$hx_exports["bt"]["IParentNode"] = dropecho_ai_bt_node_IParentNode;
+dropecho_ai_bt_node_IParentNode.__name__ = "dropecho.ai.bt.node.IParentNode";
+Object.assign(dropecho_ai_bt_node_IParentNode.prototype, {
+	__class__: dropecho_ai_bt_node_IParentNode
+});
 class dropecho_ai_bt_node_IExecutable {
 }
-dropecho_ai_bt_node_IExecutable.__name__ = true;
+dropecho_ai_bt_node_IExecutable.__name__ = "dropecho.ai.bt.node.IExecutable";
 Object.assign(dropecho_ai_bt_node_IExecutable.prototype, {
 	__class__: dropecho_ai_bt_node_IExecutable
 });
 class dropecho_ai_bt_node_Node {
 }
 $hx_exports["bt"]["Node"] = dropecho_ai_bt_node_Node;
-dropecho_ai_bt_node_Node.__name__ = true;
+dropecho_ai_bt_node_Node.__name__ = "dropecho.ai.bt.node.Node";
 dropecho_ai_bt_node_Node.__interfaces__ = [dropecho_ai_bt_node_IExecutable];
 Object.assign(dropecho_ai_bt_node_Node.prototype, {
 	__class__: dropecho_ai_bt_node_Node
 });
 class dropecho_ai_bt_BehaviorTree {
 	constructor(root) {
+		this.labels = new haxe_ds_ObjectMap();
+		this.tracer = null;
 		if(root == null) {
 			throw haxe_Exception.thrown("BehaviorTree needs a root node, but got null. Pass the node to run each tick, e.g. new BehaviorTree(new SequenceNode([...])).");
 		}
@@ -228,15 +355,67 @@ class dropecho_ai_bt_BehaviorTree {
 		this.child.init(this.context);
 	}
 	execute(deltaTime) {
-		return this.child.execute(deltaTime);
+		let child = this.child;
+		let tracer = this.tracer;
+		let status = child.execute(deltaTime);
+		if(tracer != null) {
+			tracer.onTick(child,status,deltaTime);
+		}
+		return status;
 	}
 	halt() {
-		this.child.halt();
+		let child = this.child;
+		let tracer = this.tracer;
+		if(tracer != null) {
+			tracer.onHalt(child);
+		}
+		child.halt();
+	}
+	children() {
+		return [this.child];
+	}
+	setTracer(tracer) {
+		this.tracer = tracer;
+		dropecho_ai_bt_trace_TracedChild.passOn([this.child],tracer);
+	}
+	setLabel(node,label) {
+		if(label == null) {
+			this.labels.remove(node);
+		} else {
+			this.labels.set(node,label);
+		}
+	}
+	labelOf(node) {
+		let label = this.labels.h[node.__id__];
+		if(label != null) {
+			return label;
+		}
+		if(js_Boot.__implements(node,dropecho_ai_bt_node_ILabeled)) {
+			return node.getLabel();
+		}
+		return null;
+	}
+	toText(recorder) {
+		return dropecho_ai_bt_trace_TreeDump.toText(this.child,$bind(this,this.nameOf),recorder);
+	}
+	toDot(recorder) {
+		return dropecho_ai_bt_trace_TreeDump.toDot(this.child,$bind(this,this.nameOf),recorder);
+	}
+	nameOf(node) {
+		let nodeClass = js_Boot.getClass(node);
+		let fullName = nodeClass == null ? "Node" : nodeClass.__name__;
+		let className = HxOverrides.substr(fullName,fullName.lastIndexOf(".") + 1,null);
+		let label = this.labelOf(node);
+		if(label == null) {
+			return className;
+		} else {
+			return "" + className + " \"" + label + "\"";
+		}
 	}
 }
 $hx_exports["bt"]["BehaviorTree"] = dropecho_ai_bt_BehaviorTree;
-dropecho_ai_bt_BehaviorTree.__name__ = true;
-dropecho_ai_bt_BehaviorTree.__interfaces__ = [dropecho_ai_bt_node_Node];
+dropecho_ai_bt_BehaviorTree.__name__ = "dropecho.ai.bt.BehaviorTree";
+dropecho_ai_bt_BehaviorTree.__interfaces__ = [dropecho_ai_bt_node_IParentNode,dropecho_ai_bt_node_Node];
 Object.assign(dropecho_ai_bt_BehaviorTree.prototype, {
 	__class__: dropecho_ai_bt_BehaviorTree
 });
@@ -258,7 +437,7 @@ class dropecho_ai_bt_node_ConditionNode {
 	}
 }
 $hx_exports["bt"]["ConditionNode"] = dropecho_ai_bt_node_ConditionNode;
-dropecho_ai_bt_node_ConditionNode.__name__ = true;
+dropecho_ai_bt_node_ConditionNode.__name__ = "dropecho.ai.bt.node.ConditionNode";
 dropecho_ai_bt_node_ConditionNode.__interfaces__ = [dropecho_ai_bt_node_Node];
 Object.assign(dropecho_ai_bt_node_ConditionNode.prototype, {
 	__class__: dropecho_ai_bt_node_ConditionNode
@@ -272,7 +451,14 @@ class dropecho_ai_bt_node_Duration {
 		return value;
 	}
 }
-dropecho_ai_bt_node_Duration.__name__ = true;
+dropecho_ai_bt_node_Duration.__name__ = "dropecho.ai.bt.node.Duration";
+class dropecho_ai_bt_node_ILabeled {
+}
+$hx_exports["bt"]["ILabeled"] = dropecho_ai_bt_node_ILabeled;
+dropecho_ai_bt_node_ILabeled.__name__ = "dropecho.ai.bt.node.ILabeled";
+Object.assign(dropecho_ai_bt_node_ILabeled.prototype, {
+	__class__: dropecho_ai_bt_node_ILabeled
+});
 class dropecho_ai_bt_node_LeafNode {
 	constructor() {
 		if(dropecho_ai_bt_node_LeafNode._hx_skip_constructor) {
@@ -289,7 +475,7 @@ class dropecho_ai_bt_node_LeafNode {
 	}
 }
 $hx_exports["bt"]["LeafNode"] = dropecho_ai_bt_node_LeafNode;
-dropecho_ai_bt_node_LeafNode.__name__ = true;
+dropecho_ai_bt_node_LeafNode.__name__ = "dropecho.ai.bt.node.LeafNode";
 dropecho_ai_bt_node_LeafNode.__interfaces__ = [dropecho_ai_bt_node_Node];
 Object.assign(dropecho_ai_bt_node_LeafNode.prototype, {
 	__class__: dropecho_ai_bt_node_LeafNode
@@ -297,10 +483,14 @@ Object.assign(dropecho_ai_bt_node_LeafNode.prototype, {
 class dropecho_ai_bt_node_NODE_$STATUS_$IMPL {
 }
 $hx_exports["bt"]["NODE_STATUS"] = dropecho_ai_bt_node_NODE_$STATUS_$IMPL;
-dropecho_ai_bt_node_NODE_$STATUS_$IMPL.__name__ = true;
+dropecho_ai_bt_node_NODE_$STATUS_$IMPL.__name__ = "dropecho.ai.bt.node.NODE_STATUS_IMPL";
 class dropecho_ai_bt_node_TaskNode {
 	constructor(taskName) {
+		this.taskName = taskName;
 		this.action = dropecho_ai_TaskBank.get(taskName);
+	}
+	getLabel() {
+		return this.taskName;
 	}
 	init(context) {
 		this.context = context;
@@ -312,8 +502,8 @@ class dropecho_ai_bt_node_TaskNode {
 	}
 }
 $hx_exports["bt"]["TaskNode"] = dropecho_ai_bt_node_TaskNode;
-dropecho_ai_bt_node_TaskNode.__name__ = true;
-dropecho_ai_bt_node_TaskNode.__interfaces__ = [dropecho_ai_bt_node_Node];
+dropecho_ai_bt_node_TaskNode.__name__ = "dropecho.ai.bt.node.TaskNode";
+dropecho_ai_bt_node_TaskNode.__interfaces__ = [dropecho_ai_bt_node_ILabeled,dropecho_ai_bt_node_Node];
 Object.assign(dropecho_ai_bt_node_TaskNode.prototype, {
 	__class__: dropecho_ai_bt_node_TaskNode
 });
@@ -351,7 +541,7 @@ class dropecho_ai_bt_node_WaitNode extends dropecho_ai_bt_node_LeafNode {
 	}
 }
 $hx_exports["bt"]["WaitNode"] = dropecho_ai_bt_node_WaitNode;
-dropecho_ai_bt_node_WaitNode.__name__ = true;
+dropecho_ai_bt_node_WaitNode.__name__ = "dropecho.ai.bt.node.WaitNode";
 dropecho_ai_bt_node_WaitNode.__super__ = dropecho_ai_bt_node_LeafNode;
 Object.assign(dropecho_ai_bt_node_WaitNode.prototype, {
 	__class__: dropecho_ai_bt_node_WaitNode
@@ -374,7 +564,7 @@ class dropecho_ai_bt_node_composite_ChildCursor {
 		this.index = 0;
 	}
 }
-dropecho_ai_bt_node_composite_ChildCursor.__name__ = true;
+dropecho_ai_bt_node_composite_ChildCursor.__name__ = "dropecho.ai.bt.node.composite.ChildCursor";
 Object.assign(dropecho_ai_bt_node_composite_ChildCursor.prototype, {
 	__class__: dropecho_ai_bt_node_composite_ChildCursor
 });
@@ -383,8 +573,9 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 		if(reactive == null) {
 			reactive = false;
 		}
+		this.tracer = null;
 		this.runningChild = null;
-		this.children = children;
+		this.childNodes = children;
 		this.childCursor = new dropecho_ai_bt_node_composite_ChildCursor(children);
 		this.reactive = reactive;
 	}
@@ -395,7 +586,14 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 				child.init(context);
 			}
 		};
-		Lambda.iter(this.children,initChild);
+		Lambda.iter(this.childNodes,initChild);
+	}
+	children() {
+		return this.childNodes.slice();
+	}
+	setTracer(tracer) {
+		this.tracer = tracer;
+		dropecho_ai_bt_trace_TracedChild.passOn(this.childNodes,tracer);
 	}
 	runChildren(decidingStatus,deltaTime) {
 		if(this.reactive) {
@@ -405,8 +603,12 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 		}
 		while(true) {
 			let child = this.childCursor.current();
-			let childStatus = child.execute(deltaTime);
-			if(childStatus == 2) {
+			let tracer = this.tracer;
+			let status = child.execute(deltaTime);
+			if(tracer != null) {
+				tracer.onTick(child,status,deltaTime);
+			}
+			if(status == 2) {
 				this._haltRunningChildUnless(child);
 				this.runningChild = child;
 				return 2;
@@ -415,10 +617,10 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 				this.runningChild = null;
 			}
 			let isLastChild = this.childCursor.isOnLast();
-			if(childStatus == decidingStatus || isLastChild) {
+			if(status == decidingStatus || isLastChild) {
 				this._haltRunningChildUnless(null);
 				this.childCursor.reset();
-				return childStatus;
+				return status;
 			}
 			this.childCursor.advance();
 		}
@@ -432,10 +634,10 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 			return;
 		}
 		let _g = 0;
-		let _g1 = this.children.length;
+		let _g1 = this.childNodes.length;
 		while(_g < _g1) {
 			let index = _g++;
-			let child = this.children[index];
+			let child = this.childNodes[index];
 			if(child == this.runningChild) {
 				return;
 			}
@@ -458,27 +660,33 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 	}
 	_haltRunningChildUnless(stillRunning) {
 		if(this.runningChild != null && this.runningChild != stillRunning) {
-			this.runningChild.halt();
+			let child = this.runningChild;
+			let tracer = this.tracer;
+			if(tracer != null) {
+				tracer.onHalt(child);
+			}
+			child.halt();
 		}
 		this.runningChild = null;
 	}
 }
-dropecho_ai_bt_node_composite_CompositeNode.__name__ = true;
-dropecho_ai_bt_node_composite_CompositeNode.__interfaces__ = [dropecho_ai_bt_node_Node];
+dropecho_ai_bt_node_composite_CompositeNode.__name__ = "dropecho.ai.bt.node.composite.CompositeNode";
+dropecho_ai_bt_node_composite_CompositeNode.__interfaces__ = [dropecho_ai_bt_node_IParentNode,dropecho_ai_bt_node_Node];
 Object.assign(dropecho_ai_bt_node_composite_CompositeNode.prototype, {
 	__class__: dropecho_ai_bt_node_composite_CompositeNode
 });
 class dropecho_ai_bt_node_composite_IAbortsLowerPriority {
 }
-dropecho_ai_bt_node_composite_IAbortsLowerPriority.__name__ = true;
+dropecho_ai_bt_node_composite_IAbortsLowerPriority.__name__ = "dropecho.ai.bt.node.composite.IAbortsLowerPriority";
 Object.assign(dropecho_ai_bt_node_composite_IAbortsLowerPriority.prototype, {
 	__class__: dropecho_ai_bt_node_composite_IAbortsLowerPriority
 });
 class dropecho_ai_bt_node_composite_ParallelNode {
 	constructor(children,successThreshold,failureThreshold) {
+		this.tracer = null;
 		this.failureCount = 0;
 		this.successCount = 0;
-		this.children = children;
+		this.childNodes = children;
 		let _g = [];
 		let _g1 = 0;
 		while(_g1 < children.length) {
@@ -501,21 +709,33 @@ class dropecho_ai_bt_node_composite_ParallelNode {
 				child.init(context);
 			}
 		};
-		Lambda.iter(this.children,initChild);
+		Lambda.iter(this.childNodes,initChild);
+	}
+	children() {
+		return this.childNodes.slice();
+	}
+	setTracer(tracer) {
+		this.tracer = tracer;
+		dropecho_ai_bt_trace_TracedChild.passOn(this.childNodes,tracer);
 	}
 	execute(deltaTime) {
 		let _g = 0;
-		let _g1 = this.children.length;
+		let _g1 = this.childNodes.length;
 		while(_g < _g1) {
 			let index = _g++;
 			if(this.childResults[index] == 0 || this.childResults[index] == 1) {
 				continue;
 			}
-			let childStatus = this.children[index].execute(deltaTime);
-			this.childResults[index] = childStatus;
-			if(childStatus == 0) {
+			let child = this.childNodes[index];
+			let tracer = this.tracer;
+			let status = child.execute(deltaTime);
+			if(tracer != null) {
+				tracer.onTick(child,status,deltaTime);
+			}
+			this.childResults[index] = status;
+			if(status == 0) {
 				this.successCount++;
-			} else if(childStatus == 1) {
+			} else if(status == 1) {
 				this.failureCount++;
 			}
 			let decided = this._decidedStatus();
@@ -533,11 +753,16 @@ class dropecho_ai_bt_node_composite_ParallelNode {
 	}
 	halt() {
 		let _g = 0;
-		let _g1 = this.children.length;
+		let _g1 = this.childNodes.length;
 		while(_g < _g1) {
 			let index = _g++;
 			if(this.childResults[index] == 2) {
-				this.children[index].halt();
+				let child = this.childNodes[index];
+				let tracer = this.tracer;
+				if(tracer != null) {
+					tracer.onHalt(child);
+				}
+				child.halt();
 			}
 			this.childResults[index] = null;
 		}
@@ -548,20 +773,20 @@ class dropecho_ai_bt_node_composite_ParallelNode {
 		if(this.successCount >= this.successThreshold) {
 			return 0;
 		}
-		if(this.failureCount >= this.failureThreshold || this.failureCount > this.children.length - this.successThreshold) {
+		if(this.failureCount >= this.failureThreshold || this.failureCount > this.childNodes.length - this.successThreshold) {
 			return 1;
 		}
 		return null;
 	}
 	_validateThreshold(name,threshold) {
-		if((threshold >= 1 && threshold <= this.children.length) == false) {
-			throw haxe_Exception.thrown("ParallelNode " + name + " must be between 1 and the number of children (" + this.children.length + "), but got " + threshold + ". " + "A threshold above the child count can never be reached; leave it out to use the default.");
+		if((threshold >= 1 && threshold <= this.childNodes.length) == false) {
+			throw haxe_Exception.thrown("ParallelNode " + name + " must be between 1 and the number of children (" + this.childNodes.length + "), but got " + threshold + ". " + "A threshold above the child count can never be reached; leave it out to use the default.");
 		}
 	}
 }
 $hx_exports["bt"]["ParallelNode"] = dropecho_ai_bt_node_composite_ParallelNode;
-dropecho_ai_bt_node_composite_ParallelNode.__name__ = true;
-dropecho_ai_bt_node_composite_ParallelNode.__interfaces__ = [dropecho_ai_bt_node_Node];
+dropecho_ai_bt_node_composite_ParallelNode.__name__ = "dropecho.ai.bt.node.composite.ParallelNode";
+dropecho_ai_bt_node_composite_ParallelNode.__interfaces__ = [dropecho_ai_bt_node_IParentNode,dropecho_ai_bt_node_Node];
 Object.assign(dropecho_ai_bt_node_composite_ParallelNode.prototype, {
 	__class__: dropecho_ai_bt_node_composite_ParallelNode
 });
@@ -577,7 +802,7 @@ class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_com
 	}
 }
 $hx_exports["bt"]["SelectorNode"] = dropecho_ai_bt_node_composite_SelectorNode;
-dropecho_ai_bt_node_composite_SelectorNode.__name__ = true;
+dropecho_ai_bt_node_composite_SelectorNode.__name__ = "dropecho.ai.bt.node.composite.SelectorNode";
 dropecho_ai_bt_node_composite_SelectorNode.__super__ = dropecho_ai_bt_node_composite_CompositeNode;
 Object.assign(dropecho_ai_bt_node_composite_SelectorNode.prototype, {
 	__class__: dropecho_ai_bt_node_composite_SelectorNode
@@ -594,7 +819,7 @@ class dropecho_ai_bt_node_composite_SequenceNode extends dropecho_ai_bt_node_com
 	}
 }
 $hx_exports["bt"]["SequenceNode"] = dropecho_ai_bt_node_composite_SequenceNode;
-dropecho_ai_bt_node_composite_SequenceNode.__name__ = true;
+dropecho_ai_bt_node_composite_SequenceNode.__name__ = "dropecho.ai.bt.node.composite.SequenceNode";
 dropecho_ai_bt_node_composite_SequenceNode.__super__ = dropecho_ai_bt_node_composite_CompositeNode;
 Object.assign(dropecho_ai_bt_node_composite_SequenceNode.prototype, {
 	__class__: dropecho_ai_bt_node_composite_SequenceNode
@@ -602,7 +827,7 @@ Object.assign(dropecho_ai_bt_node_composite_SequenceNode.prototype, {
 class dropecho_ai_bt_node_decorator_AbortMode_$IMPL {
 }
 $hx_exports["bt"]["AbortMode"] = dropecho_ai_bt_node_decorator_AbortMode_$IMPL;
-dropecho_ai_bt_node_decorator_AbortMode_$IMPL.__name__ = true;
+dropecho_ai_bt_node_decorator_AbortMode_$IMPL.__name__ = "dropecho.ai.bt.node.decorator.AbortMode_IMPL";
 class dropecho_ai_bt_node_decorator_DecoratorNode {
 	constructor(child) {
 		if(dropecho_ai_bt_node_decorator_DecoratorNode._hx_skip_constructor) {
@@ -611,6 +836,7 @@ class dropecho_ai_bt_node_decorator_DecoratorNode {
 		this._hx_constructor(child);
 	}
 	_hx_constructor(child) {
+		this.tracer = null;
 		this.child = child;
 	}
 	init(context) {
@@ -619,12 +845,36 @@ class dropecho_ai_bt_node_decorator_DecoratorNode {
 			this.child.init(context);
 		}
 	}
+	children() {
+		return [this.child];
+	}
+	setTracer(tracer) {
+		this.tracer = tracer;
+		dropecho_ai_bt_trace_TracedChild.passOn([this.child],tracer);
+	}
 	halt() {
-		this.child.halt();
+		this.haltChild();
+	}
+	executeChild(deltaTime) {
+		let child = this.child;
+		let tracer = this.tracer;
+		let status = child.execute(deltaTime);
+		if(tracer != null) {
+			tracer.onTick(child,status,deltaTime);
+		}
+		return status;
+	}
+	haltChild() {
+		let child = this.child;
+		let tracer = this.tracer;
+		if(tracer != null) {
+			tracer.onHalt(child);
+		}
+		child.halt();
 	}
 }
-dropecho_ai_bt_node_decorator_DecoratorNode.__name__ = true;
-dropecho_ai_bt_node_decorator_DecoratorNode.__interfaces__ = [dropecho_ai_bt_node_Node];
+dropecho_ai_bt_node_decorator_DecoratorNode.__name__ = "dropecho.ai.bt.node.decorator.DecoratorNode";
+dropecho_ai_bt_node_decorator_DecoratorNode.__interfaces__ = [dropecho_ai_bt_node_IParentNode,dropecho_ai_bt_node_Node];
 Object.assign(dropecho_ai_bt_node_decorator_DecoratorNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_DecoratorNode
 });
@@ -649,7 +899,7 @@ class dropecho_ai_bt_node_decorator_CooldownNode extends dropecho_ai_bt_node_dec
 			}
 			this.isCoolingDown = false;
 		}
-		let status = this.child.execute(deltaTime);
+		let status = this.executeChild(deltaTime);
 		if(status != 2) {
 			this.isCoolingDown = true;
 			this.elapsed = 0;
@@ -658,7 +908,7 @@ class dropecho_ai_bt_node_decorator_CooldownNode extends dropecho_ai_bt_node_dec
 	}
 }
 $hx_exports["bt"]["CooldownNode"] = dropecho_ai_bt_node_decorator_CooldownNode;
-dropecho_ai_bt_node_decorator_CooldownNode.__name__ = true;
+dropecho_ai_bt_node_decorator_CooldownNode.__name__ = "dropecho.ai.bt.node.decorator.CooldownNode";
 dropecho_ai_bt_node_decorator_CooldownNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_CooldownNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_CooldownNode
@@ -687,7 +937,7 @@ class dropecho_ai_bt_node_decorator_GuardNode extends dropecho_ai_bt_node_decora
 				return 1;
 			}
 		}
-		let status = this.child.execute(deltaTime);
+		let status = this.executeChild(deltaTime);
 		this.isChildRunning = status == 2;
 		return status;
 	}
@@ -712,7 +962,7 @@ class dropecho_ai_bt_node_decorator_GuardNode extends dropecho_ai_bt_node_decora
 	}
 }
 $hx_exports["bt"]["GuardNode"] = dropecho_ai_bt_node_decorator_GuardNode;
-dropecho_ai_bt_node_decorator_GuardNode.__name__ = true;
+dropecho_ai_bt_node_decorator_GuardNode.__name__ = "dropecho.ai.bt.node.decorator.GuardNode";
 dropecho_ai_bt_node_decorator_GuardNode.__interfaces__ = [dropecho_ai_bt_node_composite_IAbortsLowerPriority];
 dropecho_ai_bt_node_decorator_GuardNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_GuardNode.prototype, {
@@ -723,7 +973,7 @@ class dropecho_ai_bt_node_decorator_InverterNode extends dropecho_ai_bt_node_dec
 		super(child);
 	}
 	execute(deltaTime) {
-		switch(this.child.execute(deltaTime)) {
+		switch(this.executeChild(deltaTime)) {
 		case 0:
 			return 1;
 		case 1:
@@ -734,7 +984,7 @@ class dropecho_ai_bt_node_decorator_InverterNode extends dropecho_ai_bt_node_dec
 	}
 }
 $hx_exports["bt"]["InverterNode"] = dropecho_ai_bt_node_decorator_InverterNode;
-dropecho_ai_bt_node_decorator_InverterNode.__name__ = true;
+dropecho_ai_bt_node_decorator_InverterNode.__name__ = "dropecho.ai.bt.node.decorator.InverterNode";
 dropecho_ai_bt_node_decorator_InverterNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_InverterNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_InverterNode
@@ -744,7 +994,7 @@ class dropecho_ai_bt_node_decorator_RepeatUntilNode extends dropecho_ai_bt_node_
 		super(child);
 	}
 	execute(deltaTime) {
-		let status = this.child.execute(deltaTime);
+		let status = this.executeChild(deltaTime);
 		if(status == 0 || status == 2) {
 			return 2;
 		}
@@ -752,7 +1002,7 @@ class dropecho_ai_bt_node_decorator_RepeatUntilNode extends dropecho_ai_bt_node_
 	}
 }
 $hx_exports["bt"]["RepeatUntilNode"] = dropecho_ai_bt_node_decorator_RepeatUntilNode;
-dropecho_ai_bt_node_decorator_RepeatUntilNode.__name__ = true;
+dropecho_ai_bt_node_decorator_RepeatUntilNode.__name__ = "dropecho.ai.bt.node.decorator.RepeatUntilNode";
 dropecho_ai_bt_node_decorator_RepeatUntilNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_RepeatUntilNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_RepeatUntilNode
@@ -775,10 +1025,10 @@ class dropecho_ai_bt_node_decorator_RepeaterNode extends dropecho_ai_bt_node_dec
 	}
 	execute(deltaTime) {
 		if(this.times == null) {
-			this.childRunning = this.child.execute(deltaTime) == 2;
+			this.childRunning = this.executeChild(deltaTime) == 2;
 			return 2;
 		}
-		while(this.successes < this.times) switch(this.child.execute(deltaTime)) {
+		while(this.successes < this.times) switch(this.executeChild(deltaTime)) {
 		case 0:
 			this.successes++;
 			break;
@@ -804,7 +1054,7 @@ class dropecho_ai_bt_node_decorator_RepeaterNode extends dropecho_ai_bt_node_dec
 	}
 }
 $hx_exports["bt"]["RepeaterNode"] = dropecho_ai_bt_node_decorator_RepeaterNode;
-dropecho_ai_bt_node_decorator_RepeaterNode.__name__ = true;
+dropecho_ai_bt_node_decorator_RepeaterNode.__name__ = "dropecho.ai.bt.node.decorator.RepeaterNode";
 dropecho_ai_bt_node_decorator_RepeaterNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_RepeaterNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_RepeaterNode
@@ -826,7 +1076,7 @@ class dropecho_ai_bt_node_decorator_RetryNode extends dropecho_ai_bt_node_decora
 		this.attempts = attempts;
 	}
 	execute(deltaTime) {
-		while(this.failures < this.attempts) switch(this.child.execute(deltaTime)) {
+		while(this.failures < this.attempts) switch(this.executeChild(deltaTime)) {
 		case 0:
 			this.reset();
 			return 0;
@@ -852,7 +1102,7 @@ class dropecho_ai_bt_node_decorator_RetryNode extends dropecho_ai_bt_node_decora
 	}
 }
 $hx_exports["bt"]["RetryNode"] = dropecho_ai_bt_node_decorator_RetryNode;
-dropecho_ai_bt_node_decorator_RetryNode.__name__ = true;
+dropecho_ai_bt_node_decorator_RetryNode.__name__ = "dropecho.ai.bt.node.decorator.RetryNode";
 dropecho_ai_bt_node_decorator_RetryNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_RetryNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_RetryNode
@@ -862,14 +1112,14 @@ class dropecho_ai_bt_node_decorator_SucceederNode extends dropecho_ai_bt_node_de
 		super(child);
 	}
 	execute(deltaTime) {
-		if(this.child.execute(deltaTime) == 2) {
+		if(this.executeChild(deltaTime) == 2) {
 			return 2;
 		}
 		return 0;
 	}
 }
 $hx_exports["bt"]["SucceederNode"] = dropecho_ai_bt_node_decorator_SucceederNode;
-dropecho_ai_bt_node_decorator_SucceederNode.__name__ = true;
+dropecho_ai_bt_node_decorator_SucceederNode.__name__ = "dropecho.ai.bt.node.decorator.SucceederNode";
 dropecho_ai_bt_node_decorator_SucceederNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_SucceederNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_SucceederNode
@@ -891,14 +1141,14 @@ class dropecho_ai_bt_node_decorator_TimeoutNode extends dropecho_ai_bt_node_deco
 		if(this.isTiming) {
 			this.elapsed += deltaTime;
 			if(this.elapsed > this.limit) {
-				this.child.halt();
+				this.haltChild();
 				this.reset();
 				return 1;
 			}
 		} else {
 			this.isTiming = true;
 		}
-		let status = this.child.execute(deltaTime);
+		let status = this.executeChild(deltaTime);
 		if(status != 2) {
 			this.reset();
 		}
@@ -914,18 +1164,163 @@ class dropecho_ai_bt_node_decorator_TimeoutNode extends dropecho_ai_bt_node_deco
 	}
 }
 $hx_exports["bt"]["TimeoutNode"] = dropecho_ai_bt_node_decorator_TimeoutNode;
-dropecho_ai_bt_node_decorator_TimeoutNode.__name__ = true;
+dropecho_ai_bt_node_decorator_TimeoutNode.__name__ = "dropecho.ai.bt.node.decorator.TimeoutNode";
 dropecho_ai_bt_node_decorator_TimeoutNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_TimeoutNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_TimeoutNode
 });
+class dropecho_ai_bt_trace_ITreeTracer {
+}
+$hx_exports["bt"]["ITreeTracer"] = dropecho_ai_bt_trace_ITreeTracer;
+dropecho_ai_bt_trace_ITreeTracer.__name__ = "dropecho.ai.bt.trace.ITreeTracer";
+Object.assign(dropecho_ai_bt_trace_ITreeTracer.prototype, {
+	__class__: dropecho_ai_bt_trace_ITreeTracer
+});
+class dropecho_ai_bt_trace_StatusRecorder {
+	constructor() {
+		this.halted = new haxe_ds_ObjectMap();
+		this.statuses = new haxe_ds_ObjectMap();
+	}
+	onTick(node,status,deltaTime) {
+		this.statuses.set(node,status);
+	}
+	onHalt(node) {
+		this.halted.set(node,true);
+	}
+	statusOf(node) {
+		return this.statuses.h[node.__id__];
+	}
+	wasHalted(node) {
+		return this.halted.h.__keys__[node.__id__] != null;
+	}
+	clear() {
+		this.statuses.h = { __keys__ : { }};
+		this.halted.h = { __keys__ : { }};
+	}
+}
+$hx_exports["bt"]["StatusRecorder"] = dropecho_ai_bt_trace_StatusRecorder;
+dropecho_ai_bt_trace_StatusRecorder.__name__ = "dropecho.ai.bt.trace.StatusRecorder";
+dropecho_ai_bt_trace_StatusRecorder.__interfaces__ = [dropecho_ai_bt_trace_ITreeTracer];
+Object.assign(dropecho_ai_bt_trace_StatusRecorder.prototype, {
+	__class__: dropecho_ai_bt_trace_StatusRecorder
+});
+class dropecho_ai_bt_trace_TracedChild {
+	static execute(child,deltaTime,tracer) {
+		let status = child.execute(deltaTime);
+		if(tracer != null) {
+			tracer.onTick(child,status,deltaTime);
+		}
+		return status;
+	}
+	static halt(child,tracer) {
+		if(tracer != null) {
+			tracer.onHalt(child);
+		}
+		child.halt();
+	}
+	static passOn(children,tracer) {
+		let _g = 0;
+		while(_g < children.length) {
+			let child = children[_g];
+			++_g;
+			if(js_Boot.__implements(child,dropecho_ai_bt_node_IParentNode)) {
+				child.setTracer(tracer);
+			}
+		}
+	}
+}
+dropecho_ai_bt_trace_TracedChild.__name__ = "dropecho.ai.bt.trace.TracedChild";
+class dropecho_ai_bt_trace_TreeDump {
+	static toText(root,nameOf,recorder) {
+		let lines = [];
+		let write = null;
+		write = function(node,indent) {
+			let line = indent + nameOf(node);
+			if(recorder != null) {
+				let status = recorder.statusOf(node);
+				line += ": " + (status == null ? "-" : dropecho_ai_bt_trace_TreeDump.statusName(status));
+				if(recorder.wasHalted(node)) {
+					line += " (halted)";
+				}
+			}
+			lines.push(line);
+			let _g = 0;
+			let _g1 = dropecho_ai_bt_trace_TreeDump.childrenOf(node);
+			while(_g < _g1.length) write(_g1[_g++],indent + "  ");
+		};
+		write(root,"");
+		return lines.join("\n");
+	}
+	static toDot(root,nameOf,recorder) {
+		let nodeIds = new haxe_ds_ObjectMap();
+		let nodeLines = [];
+		let edgeLines = [];
+		let visit = null;
+		visit = function(node) {
+			if(nodeIds.h.__keys__[node.__id__] != null) {
+				return nodeIds.h[node.__id__];
+			}
+			let id = "n" + nodeLines.length;
+			nodeIds.set(node,id);
+			nodeLines.push("  " + id + " [" + dropecho_ai_bt_trace_TreeDump.dotAttributes(node,nameOf,recorder) + "];");
+			let _g = 0;
+			let _g1 = dropecho_ai_bt_trace_TreeDump.childrenOf(node);
+			while(_g < _g1.length) edgeLines.push("  " + id + " -> " + visit(_g1[_g++]) + ";");
+			return id;
+		};
+		visit(root);
+		return ["digraph {"].concat(nodeLines).concat(edgeLines).concat(["}"]).join("\n");
+	}
+	static childrenOf(node) {
+		if(js_Boot.__implements(node,dropecho_ai_bt_node_IParentNode)) {
+			return node.children();
+		}
+		return [];
+	}
+	static dotAttributes(node,nameOf,recorder) {
+		let attributes = ["label=\"" + dropecho_ai_bt_trace_TreeDump.escapeDot(nameOf(node)) + "\""];
+		if(recorder == null) {
+			return attributes.join(", ");
+		}
+		let classes = [];
+		let status = recorder.statusOf(node);
+		if(status != null) {
+			classes.push(dropecho_ai_bt_trace_TreeDump.statusName(status).toLowerCase());
+		}
+		if(recorder.wasHalted(node)) {
+			classes.push("halted");
+		}
+		if(classes.length > 0) {
+			attributes.push("class=\"" + classes.join(" ") + "\"");
+		}
+		return attributes.join(", ");
+	}
+	static escapeDot(text) {
+		let escaped = StringTools.replace(text,"\\","\\\\");
+		escaped = StringTools.replace(escaped,"\"","\\\"");
+		return StringTools.replace(escaped,"\n","\\n");
+	}
+	static statusName(status) {
+		switch(status) {
+		case 0:
+			return "SUCCESS";
+		case 1:
+			return "FAILURE";
+		case 2:
+			return "RUNNING";
+		default:
+			return Std.string(status);
+		}
+	}
+}
+dropecho_ai_bt_trace_TreeDump.__name__ = "dropecho.ai.bt.trace.TreeDump";
 class dropecho_ai_fsm_Transition {
 	constructor(to,condition) {
 		this.to = to;
 		this.condition = condition;
 	}
 }
-dropecho_ai_fsm_Transition.__name__ = true;
+dropecho_ai_fsm_Transition.__name__ = "dropecho.ai.fsm.Transition";
 Object.assign(dropecho_ai_fsm_Transition.prototype, {
 	__class__: dropecho_ai_fsm_Transition
 });
@@ -1042,14 +1437,14 @@ class dropecho_ai_fsm_FSM {
 	}
 }
 $hx_exports["fsm"]["FSM"] = dropecho_ai_fsm_FSM;
-dropecho_ai_fsm_FSM.__name__ = true;
+dropecho_ai_fsm_FSM.__name__ = "dropecho.ai.fsm.FSM";
 Object.assign(dropecho_ai_fsm_FSM.prototype, {
 	__class__: dropecho_ai_fsm_FSM
 });
 class dropecho_ai_fsm_IState {
 }
 $hx_exports["fsm"]["State"] = dropecho_ai_fsm_IState;
-dropecho_ai_fsm_IState.__name__ = true;
+dropecho_ai_fsm_IState.__name__ = "dropecho.ai.fsm.IState";
 Object.assign(dropecho_ai_fsm_IState.prototype, {
 	__class__: dropecho_ai_fsm_IState
 });
@@ -1091,7 +1486,7 @@ class dropecho_ai_goap_Action {
 	}
 }
 $hx_exports["goap"]["Action"] = dropecho_ai_goap_Action;
-dropecho_ai_goap_Action.__name__ = true;
+dropecho_ai_goap_Action.__name__ = "dropecho.ai.goap.Action";
 Object.assign(dropecho_ai_goap_Action.prototype, {
 	__class__: dropecho_ai_goap_Action
 });
@@ -1101,7 +1496,7 @@ class dropecho_ai_goap_Goal {
 	}
 }
 $hx_exports["goap"]["Goal"] = dropecho_ai_goap_Goal;
-dropecho_ai_goap_Goal.__name__ = true;
+dropecho_ai_goap_Goal.__name__ = "dropecho.ai.goap.Goal";
 Object.assign(dropecho_ai_goap_Goal.prototype, {
 	__class__: dropecho_ai_goap_Goal
 });
@@ -1182,7 +1577,7 @@ class dropecho_ai_goap_Plan {
 	}
 }
 $hx_exports["goap"]["Plan"] = dropecho_ai_goap_Plan;
-dropecho_ai_goap_Plan.__name__ = true;
+dropecho_ai_goap_Plan.__name__ = "dropecho.ai.goap.Plan";
 Object.assign(dropecho_ai_goap_Plan.prototype, {
 	__class__: dropecho_ai_goap_Plan
 });
@@ -1308,7 +1703,7 @@ class dropecho_ai_goap_Planner {
 	}
 }
 $hx_exports["goap"]["Planner"] = dropecho_ai_goap_Planner;
-dropecho_ai_goap_Planner.__name__ = true;
+dropecho_ai_goap_Planner.__name__ = "dropecho.ai.goap.Planner";
 Object.assign(dropecho_ai_goap_Planner.prototype, {
 	__class__: dropecho_ai_goap_Planner
 });
@@ -1319,7 +1714,7 @@ class dropecho_ai_utility_Motive {
 	}
 }
 $hx_exports["utility"]["Motive"] = dropecho_ai_utility_Motive;
-dropecho_ai_utility_Motive.__name__ = true;
+dropecho_ai_utility_Motive.__name__ = "dropecho.ai.utility.Motive";
 Object.assign(dropecho_ai_utility_Motive.prototype, {
 	__class__: dropecho_ai_utility_Motive
 });
@@ -1341,13 +1736,13 @@ class dropecho_ai_utility_UtilityAgent {
 	}
 }
 $hx_exports["utility"]["UtilityAgent"] = dropecho_ai_utility_UtilityAgent;
-dropecho_ai_utility_UtilityAgent.__name__ = true;
+dropecho_ai_utility_UtilityAgent.__name__ = "dropecho.ai.utility.UtilityAgent";
 Object.assign(dropecho_ai_utility_UtilityAgent.prototype, {
 	__class__: dropecho_ai_utility_UtilityAgent
 });
 class dropecho_ds_IGraph {
 }
-dropecho_ds_IGraph.__name__ = true;
+dropecho_ds_IGraph.__name__ = "dropecho.ds.IGraph";
 Object.assign(dropecho_ds_IGraph.prototype, {
 	__class__: dropecho_ds_IGraph
 });
@@ -1517,14 +1912,14 @@ class dropecho_ds_Graph {
 	}
 }
 $hx_exports["Graph"] = dropecho_ds_Graph;
-dropecho_ds_Graph.__name__ = true;
+dropecho_ds_Graph.__name__ = "dropecho.ds.Graph";
 dropecho_ds_Graph.__interfaces__ = [dropecho_ds_IGraph];
 Object.assign(dropecho_ds_Graph.prototype, {
 	__class__: dropecho_ds_Graph
 });
 class dropecho_ds_IGraphNode {
 }
-dropecho_ds_IGraphNode.__name__ = true;
+dropecho_ds_IGraphNode.__name__ = "dropecho.ds.IGraphNode";
 Object.assign(dropecho_ds_IGraphNode.prototype, {
 	__class__: dropecho_ds_IGraphNode
 });
@@ -1547,7 +1942,7 @@ class dropecho_ds_GraphNode {
 	}
 }
 $hx_exports["GraphNode"] = dropecho_ds_GraphNode;
-dropecho_ds_GraphNode.__name__ = true;
+dropecho_ds_GraphNode.__name__ = "dropecho.ds.GraphNode";
 dropecho_ds_GraphNode.__interfaces__ = [dropecho_ds_IGraphNode];
 Object.assign(dropecho_ds_GraphNode.prototype, {
 	__class__: dropecho_ds_GraphNode
@@ -1644,7 +2039,7 @@ class dropecho_ds_Heap {
 	}
 }
 $hx_exports["Heap"] = dropecho_ds_Heap;
-dropecho_ds_Heap.__name__ = true;
+dropecho_ds_Heap.__name__ = "dropecho.ds.Heap";
 Object.assign(dropecho_ds_Heap.prototype, {
 	__class__: dropecho_ds_Heap
 });
@@ -1682,7 +2077,7 @@ class dropecho_ds_Queue {
 	}
 }
 $hx_exports["Queue"] = dropecho_ds_Queue;
-dropecho_ds_Queue.__name__ = true;
+dropecho_ds_Queue.__name__ = "dropecho.ds.Queue";
 Object.assign(dropecho_ds_Queue.prototype, {
 	__class__: dropecho_ds_Queue
 });
@@ -1692,7 +2087,7 @@ class dropecho_ds_graph_NodeDist {
 		this.dist = dist;
 	}
 }
-dropecho_ds_graph_NodeDist.__name__ = true;
+dropecho_ds_graph_NodeDist.__name__ = "dropecho.ds.graph.NodeDist";
 Object.assign(dropecho_ds_graph_NodeDist.prototype, {
 	__class__: dropecho_ds_graph_NodeDist
 });
@@ -1702,7 +2097,7 @@ class dropecho_ds_graph_SearchResult {
 		this.distances = distances;
 	}
 }
-dropecho_ds_graph_SearchResult.__name__ = true;
+dropecho_ds_graph_SearchResult.__name__ = "dropecho.ds.graph.SearchResult";
 Object.assign(dropecho_ds_graph_SearchResult.prototype, {
 	__class__: dropecho_ds_graph_SearchResult
 });
@@ -1712,7 +2107,7 @@ class dropecho_ds_graph_AStarResult {
 		this.found = found;
 	}
 }
-dropecho_ds_graph_AStarResult.__name__ = true;
+dropecho_ds_graph_AStarResult.__name__ = "dropecho.ds.graph.AStarResult";
 Object.assign(dropecho_ds_graph_AStarResult.prototype, {
 	__class__: dropecho_ds_graph_AStarResult
 });
@@ -1843,7 +2238,7 @@ class dropecho_ds_graph_Search {
 	}
 }
 $hx_exports["dropecho"]["ds"]["graph"]["Search"] = dropecho_ds_graph_Search;
-dropecho_ds_graph_Search.__name__ = true;
+dropecho_ds_graph_Search.__name__ = "dropecho.ds.graph.Search";
 class dropecho_interop_AbstractArray {
 	static _new(a) {
 		let this1;
@@ -1869,13 +2264,13 @@ class dropecho_interop_JSAbstractMapKeyValueIterator {
 		return { value : _this.access[key], key : key};
 	}
 }
-dropecho_interop_JSAbstractMapKeyValueIterator.__name__ = true;
+dropecho_interop_JSAbstractMapKeyValueIterator.__name__ = "dropecho.interop.JSAbstractMapKeyValueIterator";
 Object.assign(dropecho_interop_JSAbstractMapKeyValueIterator.prototype, {
 	__class__: dropecho_interop_JSAbstractMapKeyValueIterator
 });
 class haxe_IMap {
 }
-haxe_IMap.__name__ = true;
+haxe_IMap.__name__ = "haxe.IMap";
 Object.assign(haxe_IMap.prototype, {
 	__class__: haxe_IMap
 });
@@ -1900,7 +2295,7 @@ class haxe_Exception extends Error {
 		}
 	}
 }
-haxe_Exception.__name__ = true;
+haxe_Exception.__name__ = "haxe.Exception";
 haxe_Exception.__super__ = Error;
 Object.assign(haxe_Exception.prototype, {
 	__class__: haxe_Exception
@@ -1911,7 +2306,7 @@ class haxe_ValueException extends haxe_Exception {
 		this.value = value;
 	}
 }
-haxe_ValueException.__name__ = true;
+haxe_ValueException.__name__ = "haxe.ValueException";
 haxe_ValueException.__super__ = haxe_Exception;
 Object.assign(haxe_ValueException.prototype, {
 	__class__: haxe_ValueException
@@ -2047,7 +2442,7 @@ class haxe_ds_ArraySort {
 		a[j] = tmp;
 	}
 }
-haxe_ds_ArraySort.__name__ = true;
+haxe_ds_ArraySort.__name__ = "haxe.ds.ArraySort";
 class haxe_ds_List {
 	constructor() {
 		this.length = 0;
@@ -2090,7 +2485,7 @@ class haxe_ds_List {
 		return x;
 	}
 }
-haxe_ds_List.__name__ = true;
+haxe_ds_List.__name__ = "haxe.ds.List";
 Object.assign(haxe_ds_List.prototype, {
 	__class__: haxe_ds_List
 });
@@ -2100,7 +2495,7 @@ class haxe_ds__$List_ListNode {
 		this.next = next;
 	}
 }
-haxe_ds__$List_ListNode.__name__ = true;
+haxe_ds__$List_ListNode.__name__ = "haxe.ds._List.ListNode";
 Object.assign(haxe_ds__$List_ListNode.prototype, {
 	__class__: haxe_ds__$List_ListNode
 });
@@ -2117,7 +2512,7 @@ class haxe_ds__$List_ListIterator {
 		return val;
 	}
 }
-haxe_ds__$List_ListIterator.__name__ = true;
+haxe_ds__$List_ListIterator.__name__ = "haxe.ds._List.ListIterator";
 Object.assign(haxe_ds__$List_ListIterator.prototype, {
 	__class__: haxe_ds__$List_ListIterator
 });
@@ -2136,6 +2531,15 @@ class haxe_ds_ObjectMap {
 	get(key) {
 		return this.h[key.__id__];
 	}
+	remove(key) {
+		let id = key.__id__;
+		if(this.h.__keys__[id] == null) {
+			return false;
+		}
+		delete(this.h[id]);
+		delete(this.h.__keys__[id]);
+		return true;
+	}
 	keys() {
 		let a = [];
 		for( var key in this.h.__keys__ ) {
@@ -2149,7 +2553,7 @@ class haxe_ds_ObjectMap {
 		return new haxe_iterators_MapKeyValueIterator(this);
 	}
 }
-haxe_ds_ObjectMap.__name__ = true;
+haxe_ds_ObjectMap.__name__ = "haxe.ds.ObjectMap";
 haxe_ds_ObjectMap.__interfaces__ = [haxe_IMap];
 Object.assign(haxe_ds_ObjectMap.prototype, {
 	__class__: haxe_ds_ObjectMap
@@ -2166,7 +2570,7 @@ class haxe_iterators_ArrayIterator {
 		return this.array[this.current++];
 	}
 }
-haxe_iterators_ArrayIterator.__name__ = true;
+haxe_iterators_ArrayIterator.__name__ = "haxe.iterators.ArrayIterator";
 Object.assign(haxe_iterators_ArrayIterator.prototype, {
 	__class__: haxe_iterators_ArrayIterator
 });
@@ -2177,7 +2581,7 @@ class haxe_iterators_DynamicAccessKeyValueIterator {
 		this.index = 0;
 	}
 }
-haxe_iterators_DynamicAccessKeyValueIterator.__name__ = true;
+haxe_iterators_DynamicAccessKeyValueIterator.__name__ = "haxe.iterators.DynamicAccessKeyValueIterator";
 Object.assign(haxe_iterators_DynamicAccessKeyValueIterator.prototype, {
 	__class__: haxe_iterators_DynamicAccessKeyValueIterator
 });
@@ -2194,7 +2598,7 @@ class haxe_iterators_MapKeyValueIterator {
 		return { value : this.map.get(key), key : key};
 	}
 }
-haxe_iterators_MapKeyValueIterator.__name__ = true;
+haxe_iterators_MapKeyValueIterator.__name__ = "haxe.iterators.MapKeyValueIterator";
 Object.assign(haxe_iterators_MapKeyValueIterator.prototype, {
 	__class__: haxe_iterators_MapKeyValueIterator
 });
@@ -2316,15 +2720,18 @@ class js_Boot {
 		return $global[name];
 	}
 }
-js_Boot.__name__ = true;
+js_Boot.__name__ = "js.Boot";
 function $getIterator(o) { if( o instanceof Array ) return new haxe_iterators_ArrayIterator(o); else return o.iterator(); }
 var $_;
 function $bind(o,m) { if( m == null ) return null; if( m.__id__ == null ) m.__id__ = $global.$haxeUID++; var f; if( o.hx__closures__ == null ) o.hx__closures__ = {}; else f = o.hx__closures__[m.__id__]; if( f == null ) { f = m.bind(o); o.hx__closures__[m.__id__] = f; } return f; }
 $global.$haxeUID |= 0;
+if(typeof(performance) != "undefined" ? typeof(performance.now) == "function" : false) {
+	HxOverrides.now = performance.now.bind(performance);
+}
 {
 	Object.defineProperty(String.prototype,"__class__",{ value : String, enumerable : false, writable : true});
-	String.__name__ = true;
-	Array.__name__ = true;
+	String.__name__ = "String";
+	Array.__name__ = "Array";
 }
 js_Boot.__toStr = ({ }).toString;
 dropecho_ai_TaskBank.tasks = dropecho_interop_AbstractMap._new();
