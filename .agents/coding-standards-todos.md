@@ -31,7 +31,7 @@ in code. Nothing here is implemented until approved. Terms are from
 | R11 | Refactor [pattern] | Make CompositeNode and DecoratorNode Haxe `abstract class`es so a missing `execute` is a compile error, not a runtime throw | Compiler enforces what convention does now | — | done |
 | R8 | Refactor [sweep] | P15: brace the 7 one-line `if`s, all in the Planner | Preference sweep | — | done |
 | R16 | Refactor [sweep] | P18: give the 10 untyped public functions explicit return types (`Null<Motive>` for the most important motive) | Preference sweep; signatures stop changing with bodies | — | done |
-| R17 | Refactor [sweep] | P4: doc-comment every public member (most have none) | Preference sweep; the docs target has content | — | approved |
+| R17 | Refactor [sweep] | P4: doc-comment every public member (most have none) | Preference sweep; the docs target has content | — | done |
 | R19 | Refactor [sweep] | P1: name the 7 conditions that don't read as English | Preference sweep | R6, R20 | done |
 | R18 | Refactor [sweep] | P20: write the 2 negated logic checks as `== false` in a named value | Preference sweep | — | done |
 | T6 | Test [pin] | Pin "one child per tick" for Selector and Sequence | Protects R10 | — | open |
