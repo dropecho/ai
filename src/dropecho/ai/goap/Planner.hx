@@ -6,6 +6,7 @@ import dropecho.ds.Queue;
 import dropecho.ds.graph.Search;
 import dropecho.interop.AbstractArray;
 import dropecho.interop.AbstractMap;
+import haxe.Json;
 
 private typedef WorldStateGraph = Graph<Array<String>, Action>;
 private typedef WorldStateNode = IGraphNode<Array<String>, Action>;
@@ -143,11 +144,16 @@ class Planner {
 		return new Plan(actions);
 	}
 
-	// Canonical sorted comma-joined key for a set of conditions
+	/**
+	 * Names a world state by its sorted Condition names, JSON-encoded so a name containing `,` stays distinct.
+	 *
+	 * @param conditions - The world state's Condition names, in any order.
+	 * @return The world state's graph label.
+	 */
 	private function _stateKey(conditions:Array<String>):String {
 		var sorted = conditions.copy();
 		sorted.sort(Reflect.compare);
-		return sorted.join(",");
+		return Json.stringify(sorted);
 	}
 
 	private function _hasAll(conditions:Array<String>, required:Array<String>):Bool {

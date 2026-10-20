@@ -110,4 +110,15 @@ class PlannerTests extends Test {
 		_plan = _planner.generatePlan();
 		Assert.isNull(_plan);
 	}
+
+	public function test_a_condition_name_with_a_comma_is_not_two_condition_names() {
+		var makeAB = new Action("make_a_comma_b", _ -> {}, 1, [], ["a,b"]);
+		var makeA = new Action("make_a", _ -> {}, 1, [], ["a"]);
+		var makeB = new Action("make_b", _ -> {}, 1, ["a"], ["b"]);
+		_planner = new Planner(new State(["a", "b"]), [makeAB, makeA, makeB]);
+		_plan = _planner.generatePlan();
+
+		Assert.notNull(_plan);
+		Assert.same([makeA, makeB], _plan.remainingActions());
+	}
 }
