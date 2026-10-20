@@ -1,4 +1,4 @@
-package;
+package utility;
 
 import dropecho.ai.utility.Motive;
 import dropecho.ai.utility.Motive.UtilityAgent;
