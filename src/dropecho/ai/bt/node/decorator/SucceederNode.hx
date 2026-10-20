@@ -21,7 +21,7 @@ class SucceederNode extends DecoratorNode {
 	 * @return RUNNING while the child is running, otherwise SUCCESS.
 	 */
 	public function execute(deltaTime:Float):NODE_STATUS {
-		var status = child.execute(deltaTime);
+		var status = executeChild(deltaTime);
 
 		if (status == NODE_STATUS.RUNNING) {
 			return NODE_STATUS.RUNNING;

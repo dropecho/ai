@@ -35,7 +35,7 @@ class TimeoutNode extends DecoratorNode {
 			elapsed += deltaTime;
 			var timeIsUp = elapsed > limit;
 			if (timeIsUp) {
-				child.halt();
+				haltChild();
 				reset();
 				return NODE_STATUS.FAILURE;
 			}
@@ -43,7 +43,7 @@ class TimeoutNode extends DecoratorNode {
 			isTiming = true;
 		}
 
-		var status = child.execute(deltaTime);
+		var status = executeChild(deltaTime);
 		if (status != NODE_STATUS.RUNNING) {
 			reset();
 		}

@@ -42,7 +42,7 @@ class CooldownNode extends DecoratorNode {
 			isCoolingDown = false;
 		}
 
-		var status = child.execute(deltaTime);
+		var status = executeChild(deltaTime);
 		if (status != NODE_STATUS.RUNNING) {
 			isCoolingDown = true;
 			elapsed = 0;

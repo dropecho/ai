@@ -1,5 +1,8 @@
 package dropecho.ai.bt.node.composite;
 
+import dropecho.ai.bt.trace.ITreeTracer;
+import dropecho.ai.bt.trace.TracedChild;
+
 using Lambda;
 
 /**
@@ -10,11 +13,12 @@ using Lambda;
  * With no children it succeeds at once.
  */
 @:expose("bt.ParallelNode")
-class ParallelNode implements Node {
-	private var children:Array<Node>;
+class ParallelNode implements Node implements IParentNode {
+	private var childNodes:Array<Node>;
 	private var childResults:Array<Null<NODE_STATUS>>;
 	private var successCount:Int = 0;
 	private var failureCount:Int = 0;
+	private var tracer:Null<ITreeTracer> = null;
 
 	/** How many children must succeed for the Parallel to succeed. */
 	public var successThreshold(default, null):Int;
@@ -30,7 +34,7 @@ class ParallelNode implements Node {
 	 * @param failureThreshold - How many children must fail; defaults to 1.
 	 */
 	public function new(children:Array<Node>, ?successThreshold:Int, ?failureThreshold:Int) {
-		this.children = children;
+		this.childNodes = children;
 		this.childResults = [for (_ in children) null];
 		this.successThreshold = successThreshold ?? children.length;
 		this.failureThreshold = failureThreshold ?? 1;
@@ -55,7 +59,26 @@ class ParallelNode implements Node {
 			}
 		}
 
-		this.children.iter(initChild);
+		this.childNodes.iter(initChild);
+	}
+
+	/**
+	 * Lists the children, in the order they are ticked.
+	 *
+	 * @return A copy of the children.
+	 */
+	public function children():Array<Node> {
+		return this.childNodes.copy();
+	}
+
+	/**
+	 * Reports every child this Parallel executes or halts to `tracer`, and passes it on to the parents below.
+	 *
+	 * @param tracer - The tracer, or null to stop tracing.
+	 */
+	public function setTracer(tracer:Null<ITreeTracer>):Void {
+		this.tracer = tracer;
+		TracedChild.passOn(this.childNodes, tracer);
 	}
 
 	/**
@@ -66,13 +89,13 @@ class ParallelNode implements Node {
 	 * @return SUCCESS or FAILURE once a threshold is reached (running children are halted and the next execute starts afresh), otherwise RUNNING.
 	 */
 	public function execute(deltaTime:Float):NODE_STATUS {
-		for (index in 0...children.length) {
+		for (index in 0...childNodes.length) {
 			var isFinished = childResults[index] == NODE_STATUS.SUCCESS || childResults[index] == NODE_STATUS.FAILURE;
 			if (isFinished) {
 				continue;
 			}
 
-			var childStatus = children[index].execute(deltaTime);
+			var childStatus = TracedChild.execute(childNodes[index], deltaTime, tracer);
 			childResults[index] = childStatus;
 			if (childStatus == NODE_STATUS.SUCCESS) {
 				successCount++;
@@ -100,9 +123,9 @@ class ParallelNode implements Node {
 	 * Halts every child still RUNNING and forgets the results recorded in this run.
 	 */
 	public function halt():Void {
-		for (index in 0...children.length) {
+		for (index in 0...childNodes.length) {
 			if (childResults[index] == NODE_STATUS.RUNNING) {
-				children[index].halt();
+				TracedChild.halt(childNodes[index], tracer);
 			}
 			childResults[index] = null;
 		}
@@ -112,7 +135,7 @@ class ParallelNode implements Node {
 
 	private function _decidedStatus():Null<NODE_STATUS> {
 		var hasEnoughSuccesses = successCount >= successThreshold;
-		var maxFailuresBeforeSuccessIsImpossible = children.length - successThreshold;
+		var maxFailuresBeforeSuccessIsImpossible = childNodes.length - successThreshold;
 		var hasEnoughFailures = failureCount >= failureThreshold || failureCount > maxFailuresBeforeSuccessIsImpossible;
 
 		if (hasEnoughSuccesses) {
@@ -125,9 +148,9 @@ class ParallelNode implements Node {
 	}
 
 	private function _validateThreshold(name:String, threshold:Int):Void {
-		var isInRange = threshold >= 1 && threshold <= children.length;
+		var isInRange = threshold >= 1 && threshold <= childNodes.length;
 		if (isInRange == false) {
-			throw 'ParallelNode $name must be between 1 and the number of children (${children.length}), but got $threshold. '
+			throw 'ParallelNode $name must be between 1 and the number of children (${childNodes.length}), but got $threshold. '
 				+ 'A threshold above the child count can never be reached; leave it out to use the default.';
 		}
 	}

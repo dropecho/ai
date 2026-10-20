@@ -1,5 +1,8 @@
 package dropecho.ai.bt.node.composite;
 
+import dropecho.ai.bt.trace.ITreeTracer;
+import dropecho.ai.bt.trace.TracedChild;
+
 using Lambda;
 
 /**
@@ -10,11 +13,12 @@ using Lambda;
  * the child it no longer reaches is halted. A non-reactive composite gets the same take-over only from earlier children that ask for it
  * (`IAbortsLowerPriority`, such as a Guard with LOWER_PRIORITY).
  */
-abstract class CompositeNode implements Node {
-	private var children:Array<Node>;
+abstract class CompositeNode implements Node implements IParentNode {
+	private var childNodes:Array<Node>;
 	private var childCursor:ChildCursor;
 	private var context:Blackboard;
 	private var runningChild:Null<Node> = null;
+	private var tracer:Null<ITreeTracer> = null;
 
 	/** When true, every tick starts again from the first child instead of resuming a running one. */
 	public var reactive:Bool;
@@ -26,7 +30,7 @@ abstract class CompositeNode implements Node {
 	 * @param reactive - Start from the first child every tick; defaults to false.
 	 */
 	public function new(children:Array<Node>, reactive:Bool = false) {
-		this.children = children;
+		this.childNodes = children;
 		this.childCursor = new ChildCursor(children);
 		this.reactive = reactive;
 	}
@@ -45,7 +49,26 @@ abstract class CompositeNode implements Node {
 			}
 		}
 
-		this.children.iter(initChild);
+		this.childNodes.iter(initChild);
+	}
+
+	/**
+	 * Lists the children, in the order they run.
+	 *
+	 * @return A copy of the children.
+	 */
+	public function children():Array<Node> {
+		return this.childNodes.copy();
+	}
+
+	/**
+	 * Reports every child this composite executes or halts to `tracer`, and passes it on to the parents below.
+	 *
+	 * @param tracer - The tracer, or null to stop tracing.
+	 */
+	public function setTracer(tracer:Null<ITreeTracer>):Void {
+		this.tracer = tracer;
+		TracedChild.passOn(this.childNodes, tracer);
 	}
 
 	/**
@@ -68,7 +91,7 @@ abstract class CompositeNode implements Node {
 
 		while (true) {
 			var child = this.childCursor.current();
-			var childStatus = child.execute(deltaTime);
+			var childStatus = TracedChild.execute(child, deltaTime, tracer);
 
 			if (childStatus == NODE_STATUS.RUNNING) {
 				_haltRunningChildUnless(child);
@@ -111,8 +134,8 @@ abstract class CompositeNode implements Node {
 			return;
 		}
 
-		for (index in 0...children.length) {
-			var child = children[index];
+		for (index in 0...childNodes.length) {
+			var child = childNodes[index];
 			if (child == runningChild) {
 				return;
 			}
@@ -139,7 +162,7 @@ abstract class CompositeNode implements Node {
 	private function _haltRunningChildUnless(stillRunning:Null<Node>):Void {
 		var isAbandoned = runningChild != null && runningChild != stillRunning;
 		if (isAbandoned) {
-			runningChild.halt();
+			TracedChild.halt(runningChild, tracer);
 		}
 		runningChild = null;
 	}

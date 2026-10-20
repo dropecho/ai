@@ -35,7 +35,7 @@ class RetryNode extends DecoratorNode {
 	 */
 	public function execute(deltaTime:Float):NODE_STATUS {
 		while (failures < attempts) {
-			var status = child.execute(deltaTime);
+			var status = executeChild(deltaTime);
 			switch (status) {
 				case NODE_STATUS.RUNNING:
 					childRunning = true;

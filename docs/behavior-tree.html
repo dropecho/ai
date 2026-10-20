@@ -37,9 +37,15 @@
         Tick <strong>Reactive root</strong> to rebuild the tree with a Reactive Selector at the
         root. It starts from its first child every tick, so getting hungry while sleeping
         interrupts the sleep: <code>is_hungry</code> is checked again each tick and eating takes
-        over. The interrupted child is not told; it is simply not ticked again until it is
-        reached again, and the inner Sequence's ▸ still points at <code>sleep</code>, so the nap
-        picks up where it left off once the agent has eaten.
+        over. The abandoned branch is <strong>halted</strong>: <code>sleep when tired</code> and
+        its running <code>sleep</code> are told they will not be ticked again, and the inner
+        Sequence's ▸ goes back to its first child, so the agent checks <code>is_tired</code>
+        afresh once it has eaten.
+      </p>
+      <p>
+        The page sees all this through a <strong>tracer</strong> on the tree: parents report every
+        child they run and every child they halt, and a <code>StatusRecorder</code> keeps the last
+        Status of each node for the view and for <code>tree.toText()</code>.
       </p>
 
       <div class="controls" role="group" aria-label="Tree controls">
@@ -53,8 +59,10 @@
       <div class="grid">
         <section class="panel" aria-labelledby="tree-heading">
           <h2 id="tree-heading" class="h3">Tree</h2>
-          <p class="muted">Highlighted: every node that ran this tick, with its Status. ▸: the child a Composite resumes next tick.</p>
+          <p class="muted">Highlighted: every node that ran this tick, with its Status; "halted": abandoned this tick while RUNNING. ▸: the child a Composite resumes next tick.</p>
           <ul id="tree" class="tree"></ul>
+          <h3 class="h3">tree.toText(recorder)</h3>
+          <pre id="dump" aria-label="Text dump of the tree"></pre>
         </section>
 
         <section class="panel" aria-labelledby="bb-heading">
@@ -85,15 +93,23 @@
   bb.get("hunger") &gt;= 3 ? bt.NODE_STATUS.SUCCESS : bt.NODE_STATUS.FAILURE);
 // ... eat, is_tired, sleep, wander
 
-const tree = new bt.BehaviorTree(
-  new bt.SelectorNode([
-    new bt.SequenceNode([new bt.TaskNode("is_hungry"), new bt.TaskNode("eat")]),
-    new bt.SequenceNode([new bt.TaskNode("is_tired"), new bt.TaskNode("sleep")]),
-    new bt.TaskNode("wander"),
-  ]),
-);
+const rootSelector = new bt.SelectorNode([
+  new bt.SequenceNode([new bt.TaskNode("is_hungry"), new bt.TaskNode("eat")]),
+  new bt.SequenceNode([new bt.TaskNode("is_tired"), new bt.TaskNode("sleep")]),
+  new bt.TaskNode("wander"),
+]);
+const tree = new bt.BehaviorTree(rootSelector);
 tree.init(blackboard);
 tree.execute(deltaTime); // once per tick
+
+// Watch it run: any object with onTick and onHalt, or the built-in StatusRecorder.
+const recorder = new bt.StatusRecorder();
+tree.setTracer(recorder);
+tree.setLabel(rootSelector, "root"); // Task nodes are labelled with their Task name
+recorder.clear();
+tree.execute(deltaTime);
+console.log(tree.toText(recorder)); // indented tree, each node's Status this tick
+tree.toDot(recorder);               // the same as Graphviz DOT
 
 // Reactive root: re-checks "eat when hungry" every tick, even while sleeping.
 new bt.SelectorNode([/* same children */], true); // reactive: true</code></pre>

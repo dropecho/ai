@@ -33,116 +33,98 @@ TaskBank.register("is_tired", isTired);
 TaskBank.register("sleep", sleep);
 TaskBank.register("wander", wander);
 
-// A view pairs a library node with what the page shows about it. The library calls
-// the wrapper, which passes straight through and records the Status for this tick.
-function makeView(label, kind, node, children = []) {
-  const view = { label, kind, node, children, ran: false, status: null };
-  view.wrapper = {
-    init(context) {
-      node.init(context);
+function buildTree(isReactive) {
+  const eatWhenHungry = new bt.SequenceNode([new bt.TaskNode("is_hungry"), new bt.TaskNode("eat")]);
+  const sleepWhenTired = new bt.SequenceNode([new bt.TaskNode("is_tired"), new bt.TaskNode("sleep")]);
+  const root = new bt.SelectorNode([eatWhenHungry, sleepWhenTired, new bt.TaskNode("wander")], isReactive);
+
+  const tree = new bt.BehaviorTree(root);
+  tree.setLabel(root, "root");
+  tree.setLabel(eatWhenHungry, "eat when hungry");
+  tree.setLabel(sleepWhenTired, "sleep when tired");
+  return tree;
+}
+
+function childrenOf(node) {
+  return typeof node.children === "function" ? node.children() : [];
+}
+
+function kindOf(node) {
+  if (node instanceof bt.SelectorNode) {
+    return node.reactive ? "Reactive Selector" : "Selector";
+  }
+  if (node instanceof bt.SequenceNode) {
+    return "Sequence";
+  }
+  if (node instanceof bt.TaskNode) {
+    return "Task node";
+  }
+  return "Node";
+}
+
+// The tracer is a plain object: it keeps the StatusRecorder up to date for the
+// tree view and dump, and lists the Tasks run and nodes halted, in order, for the log.
+function createTracer(tree, recorder) {
+  const events = [];
+  return {
+    events,
+    onTick(node, status, deltaTime) {
+      recorder.onTick(node, status, deltaTime);
+      const isTask = node instanceof bt.TaskNode;
+      if (isTask) {
+        events.push(`${tree.labelOf(node)} ${statusName(status)}`);
+      }
     },
-    execute(deltaTime) {
-      const status = node.execute(deltaTime);
-      view.ran = true;
-      view.status = status;
-      return status;
-    },
-    halt() {
-      node.halt();
-      view.halted = true;
+    onHalt(node) {
+      recorder.onHalt(node);
+      events.push(`${tree.labelOf(node)} halted`);
     },
   };
-  return view;
-}
-
-function task(name) {
-  return makeView(name, "Task node", new bt.TaskNode(name));
-}
-
-function selector(label, children) {
-  return makeView(label, "Selector", new bt.SelectorNode(children.map((c) => c.wrapper)), children);
-}
-
-function reactiveSelector(label, children) {
-  return makeView(label, "Reactive Selector", new bt.SelectorNode(children.map((c) => c.wrapper), true), children);
-}
-
-function sequence(label, children) {
-  return makeView(label, "Sequence", new bt.SequenceNode(children.map((c) => c.wrapper)), children);
-}
-
-function buildRootView(isReactive) {
-  const rootSelector = isReactive ? reactiveSelector : selector;
-  return rootSelector("root", [
-    sequence("eat when hungry", [task("is_hungry"), task("eat")]),
-    sequence("sleep when tired", [task("is_tired"), task("sleep")]),
-    task("wander"),
-  ]);
-}
-
-function forEachView(view, visit) {
-  visit(view);
-  for (const child of view.children) {
-    forEachView(child, visit);
-  }
 }
 
 // The child cursor is internal to a Composite; it is read here only to draw ▸.
 // A reactive Composite starts from its first child every tick, so it resumes nothing.
-function cursorIndex(view) {
-  const cursor = view.node.childCursor;
-  const isReactive = view.node.reactive === true;
+function cursorIndex(node) {
+  const cursor = node.childCursor;
+  const isReactive = node.reactive === true;
   if (!cursor || isReactive) {
     return -1;
   }
-  const current = cursor.current();
-  return view.children.findIndex((child) => child.wrapper === current);
+  return childrenOf(node).indexOf(cursor.current());
 }
 
 function createSimulation(isReactive) {
   const blackboard = new Blackboard();
   blackboard.set("hunger", 0);
   blackboard.set("energy", FULL_ENERGY);
-  const rootView = buildRootView(isReactive);
-  const tree = new bt.BehaviorTree(rootView.wrapper);
+  const tree = buildTree(isReactive);
+  const recorder = new bt.StatusRecorder();
+  const tracer = createTracer(tree, recorder);
+  tree.setTracer(tracer);
   tree.init(blackboard);
-  return { blackboard, rootView, tree, tickCount: 0, lastStatus: null };
+  return { blackboard, tree, recorder, tracer, tickCount: 0, lastStatus: null };
 }
 
 function tick(sim) {
-  forEachView(sim.rootView, (view) => {
-    view.ran = false;
-    view.halted = false;
-  });
+  sim.recorder.clear();
+  sim.tracer.events.length = 0;
   sim.lastStatus = sim.tree.execute(1);
   sim.tickCount += 1;
   return sim.lastStatus;
 }
 
-function ranTasks(rootView) {
-  const ran = [];
-  forEachView(rootView, (view) => {
-    const isRanTask = view.ran && view.children.length === 0;
-    if (isRanTask) {
-      ran.push(`${view.label} ${statusName(view.status)}`);
-    }
-    if (view.halted) {
-      ran.push(`${view.label} halted`);
-    }
-  });
-  return ran;
-}
-
-function renderNode(view, isCursor) {
+function renderNode(sim, node, isCursor) {
+  const status = sim.recorder.statusOf(node);
   const row = el("span", { class: "node" }, [
-    el("span", { text: view.label }),
-    el("span", { class: "kind", text: view.kind }),
+    el("span", { text: sim.tree.labelOf(node) ?? "" }),
+    el("span", { class: "kind", text: kindOf(node) }),
   ]);
-  if (view.ran) {
+  if (status != null) {
     row.classList.add("ran");
-    row.append(el("span", { class: `status status-${statusName(view.status)}`, text: statusName(view.status) }));
+    row.append(el("span", { class: `status status-${statusName(status)}`, text: statusName(status) }));
   }
-  if (view.halted) {
+  if (sim.recorder.wasHalted(node)) {
+    row.classList.add("halted");
     row.append(el("span", { class: "status", text: "halted" }));
   }
   if (isCursor) {
@@ -150,9 +132,10 @@ function renderNode(view, isCursor) {
     row.setAttribute("title", "The child this Composite resumes next tick");
   }
   const item = el("li", {}, [row]);
-  if (view.children.length > 0) {
-    const cursor = cursorIndex(view);
-    const list = el("ul", {}, view.children.map((child, i) => renderNode(child, i === cursor)));
+  const children = childrenOf(node);
+  if (children.length > 0) {
+    const cursor = cursorIndex(node);
+    const list = el("ul", {}, children.map((child, i) => renderNode(sim, child, i === cursor)));
     item.append(list);
   }
   return item;
@@ -160,6 +143,7 @@ function renderNode(view, isCursor) {
 
 function setupPage() {
   const treeEl = document.getElementById("tree");
+  const dumpEl = document.getElementById("dump");
   const factsEl = document.getElementById("facts");
   const logEl = document.getElementById("log");
   const statusEl = document.getElementById("tick-status");
@@ -167,7 +151,9 @@ function setupPage() {
   let sim = createSimulation(reactiveEl.checked);
 
   function render() {
-    treeEl.replaceChildren(renderNode(sim.rootView, false));
+    const root = childrenOf(sim.tree)[0];
+    treeEl.replaceChildren(renderNode(sim, root, false));
+    dumpEl.textContent = sim.tree.toText(sim.recorder);
     renderFacts(factsEl, sim.blackboard, FACT_KEYS);
     statusEl.textContent =
       sim.tickCount === 0 ? "Not ticked yet" : `Tick ${sim.tickCount}: tree answered ${statusName(sim.lastStatus)}`;
@@ -175,7 +161,7 @@ function setupPage() {
 
   function step() {
     const status = tick(sim);
-    appendLog(logEl, `#${sim.tickCount} ${statusName(status)} · ran ${ranTasks(sim.rootView).join(", ")}`);
+    appendLog(logEl, `#${sim.tickCount} ${statusName(status)} · ran ${sim.tracer.events.join(", ")}`);
     render();
   }
 
