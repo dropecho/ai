@@ -97,6 +97,15 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 | A reactive composite starts every tick at its first child | `CompositeNode.runChildren` resets the child cursor when `reactive` |
 | A RUNNING node that its parent will not tick again is halted | `CompositeNode.runChildren` / `halt`, `DecoratorNode.halt`, `BehaviorTree.halt` |
 | Every node in a tick gets the same delta time | `BehaviorTree.execute(deltaTime)` passes it down; composites and decorators forward it |
+| A Condition node never returns RUNNING | `ConditionNode.execute` |
+| A Guard never runs its child in a tick where it found its Check false | `GuardNode.execute` |
+| A lower-priority abort happens only in a non-reactive composite with a running child, from a Guard before it whose Check changed in its favour | `CompositeNode._abortLowerPriorityIfAsked`, `GuardNode.wantsToAbortLowerPriority` |
+| A Parallel ticks a child at most once per run after it finishes, and halts every child still RUNNING when it decides | `ParallelNode.execute` |
+| Repeat, Retry and Parallel counts and thresholds are valid | constructors throw |
+| A counted Repeater or a Retry starts its count afresh when it finishes or is halted | `RepeaterNode`, `RetryNode` |
+| Time-based durations are finite and at least 0 | `Duration.check` throws |
+| A Timeout never ticks its child after the limit | `TimeoutNode.execute` checks first |
+| Halting a Cooldown keeps an active cooldown | `CooldownNode` keeps the inherited `halt` |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
 | Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
 | A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from the world state provider's current world state (the empty one if none is given) | `Planner.generatePlan` (Dijkstra over every reachable world state) |
@@ -137,6 +146,12 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 - **Leaf node:** the base for game-defined leaves that are classes instead of Tasks.
   Owner: `bt.node.LeafNode`, an abstract class; subclasses implement `execute` and may
   override `halt`.
+- **Check:** a game-defined yes/no question about the Blackboard; it should only read.
+  Owner: `bt.node.Check` (typedef).
+- **Condition node:** a leaf that succeeds when its Check is true and fails when it is
+  false; never RUNNING. Owner: `bt.node.ConditionNode`.
+- **Wait:** a leaf that is RUNNING until a length of time has passed since its first tick,
+  then succeeds and starts afresh. Owner: `bt.node.WaitNode`.
 - **Composite:** a node with several children, run in order; in one tick it runs on to
   the next child until the result is decided or a child is RUNNING. Owner:
   `bt.node.composite.CompositeNode`.
@@ -148,10 +163,33 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
     tick, so a higher-priority child can take over from a RUNNING one and earlier conditions
     are re-checked. Owner: `CompositeNode.reactive`, set by the constructor's `reactive`
     argument (default false).
+- **Parallel:** ticks every unfinished child each tick and decides by counting results:
+  SUCCESS once the success threshold have succeeded (default all), FAILURE once the failure
+  threshold have failed (default 1) or success is unreachable; children still RUNNING are
+  then halted. Owner: `bt.node.composite.ParallelNode`.
 - **Decorator:** a node that wraps one child and changes its Status. Owner:
   `bt.node.decorator.DecoratorNode`.
   - **Inverter:** swaps SUCCESS and FAILURE. Owner: `InverterNode`.
-  - **Repeater:** runs its child every tick and is always RUNNING. Owner: `RepeaterNode`.
+  - **Repeater:** with a count, succeeds once the child has succeeded that many times and
+    fails as soon as it fails; without one, runs the child every tick and is always
+    RUNNING. Owner: `RepeaterNode`.
+  - **Retry:** runs the child again after each failure, up to a number of attempts;
+    succeeds when the child succeeds, fails when every attempt failed. Owner: `RetryNode`.
+  - **Guard (precondition):** runs its child only while its Check is true; otherwise
+    FAILURE. Owner: `GuardNode`.
+  - **Abort mode:** when a Guard's Check is asked again while something is running. NONE:
+    only when its child is not running. SELF (default): every tick while its child runs.
+    LOWER_PRIORITY: by its non-reactive parent while a later sibling runs. BOTH: SELF and
+    LOWER_PRIORITY. Owner: `bt.node.decorator.AbortMode`.
+  - **Lower-priority abort:** a non-reactive composite halts its running child and restarts
+    at an earlier Guard whose Check changed in that Guard's favour (to true under a
+    Selector, to false under a Sequence). Owner: `CompositeNode` through
+    `IAbortsLowerPriority`.
+  - **Timeout:** passes the child's Status through, but if the child is still RUNNING after
+    a time limit, halts it and fails; each run gets the full limit. Owner: `TimeoutNode`.
+  - **Cooldown:** after the child finishes, fails without running it until a length of
+    time has passed; time advances only on ticks it receives, and halting keeps it.
+    Owner: `CooldownNode`.
   - **Repeat until fail:** RUNNING until the child fails, then SUCCESS. Owner:
     `RepeatUntilNode`.
   - **Succeeder:** SUCCESS whenever the child finishes, whatever it returned. Owner:

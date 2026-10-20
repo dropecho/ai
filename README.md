@@ -63,15 +63,43 @@ tree.init(new Blackboard());
 var status = tree.execute(dt); // call every tick with the time since the last one
 ```
 
-Register a Task before creating a `TaskNode` that names it. Composites (`SelectorNode`,
-`SequenceNode`) run on to the next child in the same tick until the result is decided or a
-child returns `RUNNING`; a `RUNNING` child is resumed next tick. Pass `reactive: true`
-(`new SelectorNode(children, true)`, also a settable `reactive` field) to start from the first child every
-tick instead, so higher-priority children and earlier conditions are re-checked while a later child
-is `RUNNING`; a preempted child is simply not ticked again until it is reached. Decorators (`InverterNode`, `RepeaterNode`,
-`RepeatUntilNode`, `SucceederNode`) wrap a single child. For leaves that are classes
-rather than functions, extend `LeafNode` and implement `execute(deltaTime)` (it is abstract; no `override`), and override `halt()` to
-stop work in progress when a parent abandons the leaf while it is `RUNNING`.
+Register a Task before creating a `TaskNode` that names it.
+
+**Composites.** `SelectorNode` and `SequenceNode` run on to the next child in the same tick
+until the result is decided or a child returns `RUNNING`; a `RUNNING` child is resumed next
+tick. Pass `true` as the second argument (or set the `reactive` field) to start from the first
+child every tick instead, so higher-priority children and earlier conditions are re-checked;
+a running child that is no longer reached is halted. `ParallelNode(children, ?successThreshold,
+?failureThreshold)` ticks all its children every tick: it succeeds once `successThreshold`
+children have succeeded (default: all) and fails once `failureThreshold` have failed (default:
+1), or as soon as success can no longer be reached; children still running when it decides are
+halted.
+
+**Conditions and guards.** A `ConditionNode` turns a function `(blackboard) -> Bool` into a
+leaf that succeeds when it is true and fails when it is false. `GuardNode(check, child, ?abort)`
+runs `child` only while `check` is true. Its `AbortMode` says when the check is asked again
+while something is already running: `SELF` (the default) every tick while the child runs,
+halting it when the check turns false; `LOWER_PRIORITY` lets a non-reactive Selector or
+Sequence ask it while a later sibling runs, and if the answer changes in the guard's favour,
+the composite halts that sibling and restarts from the guard in the same tick; `BOTH` does
+both, and `NONE` asks only when the child is not already running.
+
+**Decorators.** `InverterNode` and `SucceederNode` change a child's result.
+`RepeaterNode(child, times)` repeats its child until it has succeeded `times` times and fails
+as soon as the child fails; with no `times` it repeats forever and always returns `RUNNING`.
+`RetryNode(child, attempts)` runs its child again after each failure, up to `attempts` runs.
+`RepeatUntilNode` runs its child until it fails.
+
+**Time.** Time-based nodes use the unit the game passes to `execute(deltaTime)`.
+`WaitNode(duration)` stays `RUNNING` until that much time has passed, then succeeds.
+`TimeoutNode(child, limit)` fails and halts the child if it is still running after `limit`, and
+`CooldownNode(child, cooldown)` fails without running the child for `cooldown` after it
+finishes. Time only advances on ticks the node receives.
+
+**Halting.** When a parent abandons a `RUNNING` node it calls `halt()`, so the node can stop
+work in progress and start afresh next time. For leaves that are classes rather than
+functions, extend `LeafNode`, implement `execute(deltaTime)` (it is abstract; no `override`)
+and override `halt()` if the leaf has work to stop. `tree.halt()` stops the whole tree.
 
 ## State machine
 

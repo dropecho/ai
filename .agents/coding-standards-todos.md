@@ -37,12 +37,12 @@ in code. Nothing here is implemented until approved. Terms are from
 | T6 | Test [pin] | Pin "one child per tick" for Selector and Sequence | Protects R10 | — | declined: B10 changes this behaviour instead |
 | T8 | Test [pin] | Pin that among equal-cost Actions the first given wins | Protects R7 | — | done |
 | F1 | Feature | A `reactive` option on Selector and Sequence that starts from the first child every tick, so higher-priority branches can take over from a RUNNING one | Interruptible behaviour (a hungry agent stops sleeping) | F2 | Feature (proposed) | Halt/reset lifecycle: a preempted or re-entered RUNNING node is told to stop and clear its state (BT.CPP `halt`, py_trees `terminate`) | Fixes stale state under reactive composites; Parallel, Timeout and aborts need it | — | open |
-| F3 | Feature (proposed) | Condition leaf (never RUNNING) and a Precondition guard decorator | The most common BT pattern; makes reactive trees useful | — | open |
-| F4 | Feature (proposed) | Repeat(N) and Retry(N) decorators; RepeaterNode takes an optional count | Standard nodes; fixes Repeater's odd forever-only semantics | — | open |
-| F5 | Feature (proposed) | Parallel composite with success/failure thresholds | The one standard composite missing | — | open |
-| F6 | Feature (proposed) | Time propagation (`execute(dt)` or a clock) plus a Wait leaf | Unblocks every time-based node | — | open |
-| F7 | Feature (proposed) | Timeout and Cooldown decorators | Heavily used in game AI | — | open |
-| F8 | Feature (proposed) | Observer aborts (self / lower priority) on the guard | Unreal/Behavior Designer model; cheaper and more explicit than reactive everywhere | — | open |
+| F3 | Feature | Condition leaf (never RUNNING) and a Precondition guard decorator | The most common BT pattern; makes reactive trees useful | — | done |
+| F4 | Feature | Repeat(N) and Retry(N) decorators; RepeaterNode takes an optional count | Standard nodes; fixes Repeater's odd forever-only semantics | — | done |
+| F5 | Feature | Parallel composite with success/failure thresholds | The one standard composite missing | — | done |
+| F6 | Feature | Time propagation (`execute(dt)` or a clock) plus a Wait leaf | Unblocks every time-based node | — | done |
+| F7 | Feature | Timeout and Cooldown decorators | Heavily used in game AI | — | done |
+| F8 | Feature | Observer aborts (self / lower priority) on the guard | Unreal/Behavior Designer model; cheaper and more explicit than reactive everywhere | — | done |
 | F9 | Feature (proposed) | Typed blackboard values (not only Float) and a tick tracing hook | Trees can hold targets/positions/enums; debuggable | — | open |
 | F10 | Feature (proposed) | ForceFailure, and common-name aliases (ForceSuccess for Succeeder, UntilFailure for RepeatUntil, Fallback for Selector) | Familiar vocabulary | — | open |
 | F11 | Feature (proposed) | Random / weighted selector and shuffled sequence, with an injectable RNG | Variety in behaviour, reproducible | — | open |

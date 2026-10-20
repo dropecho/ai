@@ -39,8 +39,8 @@ See `.agents/architecture.md` for class responsibilities and data flows.
 src/dropecho/ai/           # library source
   bt/                      # behavior tree
     node/
-      composite/           # SelectorNode, SequenceNode (optional reactive), ChildCursor
-      decorator/           # InverterNode, RepeaterNode, RepeatUntilNode, SucceederNode
+      composite/           # SelectorNode, SequenceNode (optional reactive), ParallelNode, ChildCursor
+      decorator/           # InverterNode, SucceederNode, RepeaterNode, RetryNode, RepeatUntilNode, GuardNode, AbortMode, TimeoutNode, CooldownNode
   fsm/                     # FSM, IState, Transition
   goap/                    # Action, Goal, Plan, Planner, WorldStateProvider
   utility/                 # Motive, UtilityAgent
