@@ -1,7 +1,93 @@
-<html>
-<head>
-	<script src="dropecho.ai.js"></script>
-	<script src="behavior-tree.js"></script>
-</head>
-<body></body>
-<html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Behavior tree · dropecho.ai</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="Site">
+        <a class="brand" href="index.html">dropecho.ai</a>
+        <a href="behavior-tree.html" aria-current="page">Behavior tree</a>
+        <a href="fsm.html">State machine</a>
+        <a href="goap.html">Goal planner</a>
+        <a href="utility.html">Utility</a>
+        <a href="api/index.html">API</a>
+        <a href="https://github.com/dropecho/ai">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Behavior tree</h1>
+      <p class="lede">
+        The root is a Selector of two Sequences and a fallback Task. Each Task node runs a Task
+        registered by name in the Task registry, and every Task reads and writes the Blackboard.
+      </p>
+      <p>
+        Watch the highlighted nodes: a Composite runs <strong>one child per tick</strong>. When a
+        child finishes without deciding the result, the Composite answers RUNNING and moves its
+        cursor (▸) to the next child for the next tick. A Task that answers RUNNING is asked again
+        next tick.
+      </p>
+
+      <div class="controls" role="group" aria-label="Tree controls">
+        <button id="step" class="primary">Step</button>
+        <button id="play" aria-pressed="false">Play</button>
+        <button id="reset">Reset</button>
+        <span id="tick-status" aria-live="polite"></span>
+      </div>
+
+      <div class="grid">
+        <section class="panel" aria-labelledby="tree-heading">
+          <h2 id="tree-heading" class="h3">Tree</h2>
+          <p class="muted">Highlighted: ran this tick, with its Status.</p>
+          <ul id="tree" class="tree"></ul>
+        </section>
+
+        <section class="panel" aria-labelledby="bb-heading">
+          <h2 id="bb-heading" class="h3">Blackboard</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th scope="col">Fact</th><th scope="col">Value</th></tr>
+              </thead>
+              <tbody id="facts"></tbody>
+            </table>
+          </div>
+          <p class="muted">
+            <code>is_hungry</code>: hunger ≥ 3. <code>is_tired</code>: energy ≤ 1.
+            <code>eat</code> and <code>sleep</code> answer RUNNING until done.
+          </p>
+        </section>
+
+        <section class="panel" aria-labelledby="log-heading">
+          <h2 id="log-heading" class="h3">Ticks</h2>
+          <ol id="log" class="log"></ol>
+        </section>
+      </div>
+
+      <h2>The code</h2>
+      <pre><code>TaskBank.register("is_hungry", (bb) =&gt;
+  bb.get("hunger") &gt;= 3 ? bt.NODE_STATUS.SUCCESS : bt.NODE_STATUS.FAILURE);
+// ... eat, is_tired, sleep, wander
+
+const tree = new bt.BehaviorTree(
+  new bt.SelectorNode([
+    new bt.SequenceNode([new bt.TaskNode("is_hungry"), new bt.TaskNode("eat")]),
+    new bt.SequenceNode([new bt.TaskNode("is_tired"), new bt.TaskNode("sleep")]),
+    new bt.TaskNode("wander"),
+  ]),
+);
+tree.init(blackboard);
+tree.execute(); // once per tick</code></pre>
+      <p><a href="https://github.com/dropecho/ai/blob/main/docs/behavior-tree.js">Full source of this demo</a></p>
+    </main>
+
+    <script src="dropecho.ai.js"></script>
+    <script src="common.js"></script>
+    <script src="behavior-tree.js"></script>
+  </body>
+</html>
