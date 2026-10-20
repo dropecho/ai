@@ -237,4 +237,65 @@ class FSMTests extends Test {
 
 		Assert.same(["any -> flee"], graph.edgesWithClass("active"));
 	}
+
+	public function test_toDot_draws_only_the_transitions_added() {
+		var graph = new DotGraph(_fsm.toDot());
+
+		var edges = graph.edges();
+		edges.sort(Reflect.compare);
+		Assert.same(["fsm.EatingState -> fsm.WanderState", "fsm.WanderState -> fsm.EatingState"], edges);
+		Assert.equals(-1, graph.nodes().indexOf("any"));
+	}
+
+	public function test_toDot_marks_the_current_state_and_the_next_one() {
+		_bb.set('hunger', 3);
+
+		var graph = new DotGraph(_fsm.toDot());
+
+		Assert.same(["fsm.WanderState"], graph.nodesWithClass("current"));
+		Assert.same(["fsm.EatingState"], graph.nodesWithClass("next"));
+	}
+
+	public function test_toDot_marks_the_current_state_with_nothing_pending() {
+		var graph = new DotGraph(_fsm.toDot());
+
+		Assert.same(["fsm.WanderState"], graph.nodesWithClass("current"));
+		Assert.same([], graph.nodesWithClass("next"));
+		Assert.same([], graph.edgesWithClass("active"));
+	}
+
+	public function test_toDot_declares_states_that_are_only_targets() {
+		var flee = new CountingState("flee");
+		_fsm.addAnyTransition(flee, () -> false);
+
+		var nodes = new DotGraph(_fsm.toDot()).nodes();
+
+		Assert.contains("flee", nodes);
+		Assert.contains("any", nodes);
+	}
+
+	public function test_toDot_quotes_state_names() {
+		var spaced = new CountingState('run "away"-now');
+		var fsm2 = new FSM();
+		fsm2.changeToState(spaced);
+
+		var dot = fsm2.toDot();
+
+		Assert.contains('run "away"-now', new DotGraph(dot).nodes());
+		Assert.isTrue(dot.indexOf('label="run \\"away\\"-now"') >= 0);
+	}
+
+	public function test_toDot_draws_states_with_the_same_name_as_separate_nodes() {
+		var firstIdle = new CountingState("idle");
+		var secondIdle = new CountingState("idle");
+		var fsm2 = new FSM();
+		fsm2.addTransition(firstIdle, secondIdle, () -> false);
+		fsm2.changeToState(firstIdle);
+
+		var graph = new DotGraph(fsm2.toDot());
+
+		Assert.same(["idle", "idle"], graph.nodes());
+		Assert.same(["idle -> idle"], graph.edges());
+		Assert.same(["idle"], graph.nodesWithClass("current"));
+	}
 }

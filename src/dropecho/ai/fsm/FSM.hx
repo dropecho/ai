@@ -138,65 +138,67 @@ class FSM {
 	}
 
 	/**
-	 * Draws the State graph as Graphviz DOT, marking the current State and the Transition about to be taken with `class="active"`.
-	 * It calls every Condition up to the first true one to find that Transition.
-	 * Only States with their own Transitions appear as nodes; Any-transitions start from a node named `any`.
+	 * Draws the State graph as Graphviz DOT: a node per State, labelled with its name, and an edge per Transition, with Any-transitions starting from a node named `any`.
+	 * The current State's node has `class="current"`; the Transition the next tick would take has `class="active"` and its target `class="next"`.
+	 * To find that Transition it asks the Conditions, as `tick` would, up to the first true one.
 	 *
 	 * @return The DOT source.
 	 */
 	public function toDot():String {
-		var nodeOutput = "";
-		var edgeOutput = "";
+		var next = getTransition();
+		var nodeIds = new ObjectMap<IState, String>();
+		var states = new Array<IState>();
+		var edgeLines = new Array<String>();
 
-		var activeTransition = getTransition();
-		var activeTransitionName = activeTransition == null ? "" : activeTransition.to.getName();
+		function nodeId(state:IState):String {
+			var isDeclared = nodeIds.exists(state);
+			if (isDeclared == false) {
+				nodeIds.set(state, 's${states.length}');
+				states.push(state);
+			}
+			return nodeIds.get(state);
+		}
 
+		function addEdges(fromId:String, transitions:Array<Transition>) {
+			for (t in transitions) {
+				var attributes = t == next ? ' [class="active"]' : "";
+				edgeLines.push('  $fromId -> ${nodeId(t.to)}$attributes;');
+			}
+		}
+
+		if (_currentState != null) {
+			nodeId(_currentState);
+		}
+		addEdges("any", _anyTransitions);
+		for (from => transitions in _transitions) {
+			addEdges(nodeId(from), transitions);
+		}
+
+		var nodeLines = [for (state in states) '  ${nodeIds.get(state)} [${nodeAttributes(state, next)}];'];
 		if (_anyTransitions.length > 0) {
-			nodeOutput = "any\n";
-			for (any in _anyTransitions) {
-				edgeOutput += '\n any -> ${any.to.getName()}';
-				var isActiveAnyTransition = activeTransitionName == any.to.getName() && _anyTransitions.contains(activeTransition);
-				if (isActiveAnyTransition) {
-					edgeOutput += '[class="active"]';
-				}
-			}
+			nodeLines.push('  any [label="any", shape=plaintext];');
 		}
 
-		for (state => value in _transitions) {
-			var key = state.getName();
-			nodeOutput = nodeOutput + "\n" + key;
+		return ["digraph {", "  rankdir=LR;"].concat(nodeLines).concat(edgeLines).concat(["}"]).join("\n");
+	}
 
-			var v:Array<Transition> = value;
-			for (edge in v) {
-				edgeOutput = edgeOutput + '\n $key -> ${edge.to.getName()}';
-
-				if (activeTransition == edge) {
-					edgeOutput += '[class="active"]';
-				}
-			}
-			edgeOutput = edgeOutput + '\n $key -> $key';
-
-			var isCurrentState = state == _currentState;
-			if (isCurrentState) {
-				if (activeTransition == null) {
-					nodeOutput += '[class="active"]';
-					edgeOutput += '[class="active"]';
-				}
-			} else {
-				if (activeTransitionName == key) {
-					nodeOutput += '[class="active"]';
-				}
-			}
+	/**
+	 * Builds the DOT attributes of `state`'s node: its quoted name, and its class if it is current or the target of `next`.
+	 *
+	 * @param state - The State drawn.
+	 * @param next - The Transition the next tick would take, or null.
+	 * @return The attributes, comma-separated.
+	 */
+	private function nodeAttributes(state:IState, next:Transition):String {
+		var name = StringTools.replace(StringTools.replace(state.getName(), "\\", "\\\\"), '"', '\\"');
+		var attributes = ['label="$name"'];
+		if (state == _currentState) {
+			attributes.push('class="current"');
 		}
-
-		return '
-      digraph {
-        rankdir=LR
-
-        ${nodeOutput}
-        ${edgeOutput}
-      }
-    ';
-
+		var isNextState = next != null && state == next.to;
+		if (isNextState) {
+			attributes.push('class="next"');
+		}
+		return attributes.join(", ");
 	}
 }
