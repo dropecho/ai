@@ -65,9 +65,9 @@ var status = tree.execute(); // call every tick
 
 Register a Task before creating a `TaskNode` that names it. Composites (`SelectorNode`,
 `SequenceNode`) run on to the next child in the same tick until the result is decided or a
-child returns `RUNNING`; a `RUNNING` child is resumed next tick. The reactive variants
-(`ReactiveSelectorNode`, `ReactiveSequenceNode`) instead start from the first child every
-tick, so higher-priority children and earlier conditions are re-checked while a later child
+child returns `RUNNING`; a `RUNNING` child is resumed next tick. Pass `reactive: true`
+(`new SelectorNode(children, true)`, also a settable `reactive` field) to start from the first child every
+tick instead, so higher-priority children and earlier conditions are re-checked while a later child
 is `RUNNING`; a preempted child is simply not ticked again until it is reached. Decorators (`InverterNode`, `RepeaterNode`,
 `RepeatUntilNode`, `SucceederNode`) wrap a single child. For leaves that are classes
 rather than functions, extend `LeafNode` and implement `execute()` (it is abstract; no `override`).

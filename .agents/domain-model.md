@@ -85,7 +85,7 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 | A Transition is taken only from the State object it was added for, even if another State has the same name | `FSM._transitions` (an `ObjectMap` keyed by State) |
 | A composite returns to its first child whenever it returns SUCCESS or FAILURE | `CompositeNode.runChildren` |
 | A composite returns RUNNING only when its current child returned RUNNING | `CompositeNode.runChildren` |
-| A reactive composite starts every tick at its first child | `ReactiveSelectorNode.execute`, `ReactiveSequenceNode.execute` |
+| A reactive composite starts every tick at its first child | `CompositeNode.runChildren` resets the child cursor when `reactive` |
 | The Planner never changes the caller's Action list | `Planner` only reads it |
 | Among Actions with the same Cost and effect, the Planner keeps the first given | `Planner.generatePlan` replaces an edge only for a strictly cheaper Action |
 | A Plan is the cheapest sequence of Actions (by total Cost) that reaches the Goal from the world state provider's current world state (the empty one if none is given) | `Planner.generatePlan` (Dijkstra over every reachable world state) |
@@ -125,10 +125,10 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
     Owner: `SelectorNode`.
   - **Sequence:** fails at the first child that fails; succeeds if all succeed.
     Owner: `SequenceNode`.
-  - **Reactive Selector:** a Selector that starts from its first child every tick, so a
-    higher-priority child can take over from a RUNNING one. Owner: `ReactiveSelectorNode`.
-  - **Reactive Sequence:** a Sequence that starts from its first child every tick, so earlier
-    conditions are re-checked while a later child is RUNNING. Owner: `ReactiveSequenceNode`.
+  - **Reactive (option):** a Selector or Sequence that starts from its first child every
+    tick, so a higher-priority child can take over from a RUNNING one and earlier conditions
+    are re-checked. Owner: `CompositeNode.reactive`, set by the constructor's `reactive`
+    argument (default false).
 - **Decorator:** a node that wraps one child and changes its Status. Owner:
   `bt.node.decorator.DecoratorNode`.
   - **Inverter:** swaps SUCCESS and FAILURE. Owner: `InverterNode`.

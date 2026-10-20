@@ -60,7 +60,7 @@ function selector(label, children) {
 }
 
 function reactiveSelector(label, children) {
-  return makeView(label, "Reactive Selector", new bt.ReactiveSelectorNode(children.map((c) => c.wrapper)), children);
+  return makeView(label, "Reactive Selector", new bt.SelectorNode(children.map((c) => c.wrapper), true), children);
 }
 
 function sequence(label, children) {
@@ -87,7 +87,7 @@ function forEachView(view, visit) {
 // A reactive Composite starts from its first child every tick, so it resumes nothing.
 function cursorIndex(view) {
   const cursor = view.node.childCursor;
-  const isReactive = view.node instanceof bt.ReactiveSelectorNode;
+  const isReactive = view.node.reactive === true;
   if (!cursor || isReactive) {
     return -1;
   }

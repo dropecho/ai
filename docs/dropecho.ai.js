@@ -262,9 +262,13 @@ class dropecho_ai_bt_node_composite_ChildCursor {
 }
 dropecho_ai_bt_node_composite_ChildCursor.__name__ = true;
 class dropecho_ai_bt_node_composite_CompositeNode {
-	constructor(children) {
+	constructor(children,reactive) {
+		if(reactive == null) {
+			reactive = false;
+		}
 		this.children = children;
 		this.childCursor = new dropecho_ai_bt_node_composite_ChildCursor(children);
+		this.reactive = reactive;
 	}
 	init(context) {
 		this.context = context;
@@ -276,6 +280,9 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 		Lambda.iter(this.children,initChild);
 	}
 	runChildren(decidingStatus) {
+		if(this.reactive) {
+			this.childCursor.reset();
+		}
 		while(true) {
 			let childStatus = this.childCursor.current().execute();
 			if(childStatus == 2) {
@@ -291,31 +298,12 @@ class dropecho_ai_bt_node_composite_CompositeNode {
 	}
 }
 dropecho_ai_bt_node_composite_CompositeNode.__name__ = true;
-class dropecho_ai_bt_node_composite_ReactiveSelectorNode extends dropecho_ai_bt_node_composite_CompositeNode {
-	constructor(children) {
-		super(children);
-	}
-	execute() {
-		this.childCursor.reset();
-		return this.runChildren(0);
-	}
-}
-$hx_exports["bt"]["ReactiveSelectorNode"] = dropecho_ai_bt_node_composite_ReactiveSelectorNode;
-dropecho_ai_bt_node_composite_ReactiveSelectorNode.__name__ = true;
-class dropecho_ai_bt_node_composite_ReactiveSequenceNode extends dropecho_ai_bt_node_composite_CompositeNode {
-	constructor(children) {
-		super(children);
-	}
-	execute() {
-		this.childCursor.reset();
-		return this.runChildren(1);
-	}
-}
-$hx_exports["bt"]["ReactiveSequenceNode"] = dropecho_ai_bt_node_composite_ReactiveSequenceNode;
-dropecho_ai_bt_node_composite_ReactiveSequenceNode.__name__ = true;
 class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_composite_CompositeNode {
-	constructor(children) {
-		super(children);
+	constructor(children,reactive) {
+		if(reactive == null) {
+			reactive = false;
+		}
+		super(children,reactive);
 	}
 	execute() {
 		return this.runChildren(0);
@@ -324,8 +312,11 @@ class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_com
 $hx_exports["bt"]["SelectorNode"] = dropecho_ai_bt_node_composite_SelectorNode;
 dropecho_ai_bt_node_composite_SelectorNode.__name__ = true;
 class dropecho_ai_bt_node_composite_SequenceNode extends dropecho_ai_bt_node_composite_CompositeNode {
-	constructor(children) {
-		super(children);
+	constructor(children,reactive) {
+		if(reactive == null) {
+			reactive = false;
+		}
+		super(children,reactive);
 	}
 	execute() {
 		return this.runChildren(1);

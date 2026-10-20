@@ -36,7 +36,7 @@ in code. Nothing here is implemented until approved. Terms are from
 | R18 | Refactor [sweep] | P20: write the 2 negated logic checks as `== false` in a named value | Preference sweep | — | done |
 | T6 | Test [pin] | Pin "one child per tick" for Selector and Sequence | Protects R10 | — | declined: B10 changes this behaviour instead |
 | T8 | Test [pin] | Pin that among equal-cost Actions the first given wins | Protects R7 | — | done |
-| F1 | Feature | Reactive Selector and Sequence nodes that start from their first child every tick, so higher-priority branches can take over from a RUNNING one | Interruptible behaviour (a hungry agent stops sleeping) | B10 | done |
+| F1 | Feature | A `reactive` option on Selector and Sequence that starts from the first child every tick, so higher-priority branches can take over from a RUNNING one | Interruptible behaviour (a hungry agent stops sleeping) | B10 | done |
 | B10 | Bug (question) | Composites run one child per tick; most behavior trees run on to the next child in the same tick. Intended? | Decides R10's shape | — | done |
 | B11 | Bug | An unknown task name gives a Task node `null`, which fails later with "not a function"; throw at construction, listing registered names | P3; failure where the cause is | — | done |
 | B12 | Bug (question) | State machine transitions are keyed by State name, so two States with one name (two instances of one class, as in the tests) share transitions silently | Removes a trap | — | done: keyed by the State object |
