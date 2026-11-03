@@ -36,7 +36,8 @@ in code. Nothing here is implemented until approved. Terms are from
 | R18 | Refactor [sweep] | P20: write the 2 negated logic checks as `== false` in a named value | Preference sweep | — | done |
 | T6 | Test [pin] | Pin "one child per tick" for Selector and Sequence | Protects R10 | — | declined: B10 changes this behaviour instead |
 | T8 | Test [pin] | Pin that among equal-cost Actions the first given wins | Protects R7 | — | done |
-| F1 | Feature | A `reactive` option on Selector and Sequence that starts from the first child every tick, so higher-priority branches can take over from a RUNNING one | Interruptible behaviour (a hungry agent stops sleeping) | F2 | Feature (proposed) | Halt/reset lifecycle: a preempted or re-entered RUNNING node is told to stop and clear its state (BT.CPP `halt`, py_trees `terminate`) | Fixes stale state under reactive composites; Parallel, Timeout and aborts need it | — | open |
+| F1 | Feature | A `reactive` option on Selector and Sequence that starts from the first child every tick, so higher-priority branches can take over from a RUNNING one | Interruptible behaviour (a hungry agent stops sleeping) | F2 | done |
+| F2 | Feature | Halt/reset lifecycle: a preempted or re-entered RUNNING node is told to stop and clear its state (BT.CPP `halt`, py_trees `terminate`) | Fixes stale state under reactive composites; Parallel, Timeout and aborts need it | — | done |
 | F3 | Feature | Condition leaf (never RUNNING) and a Precondition guard decorator | The most common BT pattern; makes reactive trees useful | — | done |
 | F4 | Feature | Repeat(N) and Retry(N) decorators; RepeaterNode takes an optional count | Standard nodes; fixes Repeater's odd forever-only semantics | — | done |
 | F5 | Feature | Parallel composite with success/failure thresholds | The one standard composite missing | — | done |
@@ -50,7 +51,6 @@ in code. Nothing here is implemented until approved. Terms are from
 | F13 | Feature (proposed) | IfThenElse / Switch composites | Clearer branching | — | open |
 | F14 | Feature (proposed) | SubTree reference, JSON tree loading via a node registry, and a builder DSL | Data-driven trees and shorter code | — | open |
 | F15 | Feature (proposed) | TaskNode accepts a function directly as well as a TaskBank name | Less global state; easier tests | — | open |
-| B10 | done |
 | B10 | Bug (question) | Composites run one child per tick; most behavior trees run on to the next child in the same tick. Intended? | Decides R10's shape | — | done |
 | B11 | Bug | An unknown task name gives a Task node `null`, which fails later with "not a function"; throw at construction, listing registered names | P3; failure where the cause is | — | done |
 | B12 | Bug (question) | State machine transitions are keyed by State name, so two States with one name (two instances of one class, as in the tests) share transitions silently | Removes a trap | — | done: keyed by the State object |
@@ -88,7 +88,7 @@ in code. Nothing here is implemented until approved. Terms are from
 
 As-is: `goap.State` holds the Condition names the agent wants true; the state machine also
 has `State` (`IState`, exposed as `fsm.State`). To-be: Goal. Why it is simpler: one word,
-one concept. Implemented by: A1. Status: open.
+one concept. Implemented by: A1. Status: done.
 
 ### M2 — name: World state is a value the Planner owns
 
@@ -102,7 +102,7 @@ Implemented by: R5, R20. Status: done.
 As-is: `dropecho.util.CurrentIterator`, shaped like a Haxe Iterator but with different
 meanings (`next()` returns the current item; `hasNext()` excludes the last). To-be: a
 cursor in `bt.node.composite` with `current()`, `advance()`, `isOnLast()`, `reset()`.
-Implemented by: A3. Status: open.
+Implemented by: A3. Status: done.
 
 ---
 
