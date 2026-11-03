@@ -16,22 +16,23 @@
   "license": "MIT",
   "scripts": {
     "prepare": "lix download",
-    "build": "npm run clean && haxe build.hxml",
+    "build": "npm run clean && haxe build.hxml && npm run build:cs",
+    "build:cs": "dotnet build targets/cs/dropecho.ai.csproj -c Release -o dist/cs/bin --nologo",
     "test": "lix dropecho.testing",
     "clean": "rm -rf dist artifacts",
     "build:docs": "haxelib run dox -i artifacts/docs.xml -o docs/api --toplevel-package dropecho.ai -D source-path https://github.com/dropecho/ai/blob/main/src -D website https://github.com/dropecho/ai --title 'dropecho.ai API'",
     "build:example": "cp dist/js/cjs/index.cjs docs/dropecho.ai.js"
   },
   "devDependencies": {
-    "lix": "^16.0.2",
-    "@semantic-release/changelog": "^6.0.2",
-    "@semantic-release/commit-analyzer": "^9.0.2",
-    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^8.0.7",
-    "@semantic-release/npm": "^9.0.1",
-    "@semantic-release/release-notes-generator": "^10.0.3",
-    "semantic-release": "^19.0.5",
+    "@semantic-release/github": "^12.0.10",
+    "@semantic-release/npm": "^13.2.0",
+    "@semantic-release/release-notes-generator": "^14.1.1",
+    "lix": "^16.0.2",
+    "semantic-release": "^25.0.9",
     "semantic-release-haxelib": "^1.1.0"
   },
   "exports": {

@@ -4,6 +4,8 @@
 -D dll_import
 -D no-root
 -D dll
+# Write C# source only; targets/cs/dropecho.ai.csproj compiles it with dotnet, because hxcs needs Mono.
+-D no-compilation
 
 # OUTPUT
--cs dist/cs/dropecho.lib_example
+-cs dist/cs/dropecho.ai
