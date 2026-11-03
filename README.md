@@ -93,11 +93,15 @@ Sequence ask it while a later sibling runs, and if the answer changes in the gua
 the composite halts that sibling and restarts from the guard in the same tick; `BOTH` does
 both, and `NONE` asks only when the child is not already running.
 
-**Decorators.** `InverterNode` and `SucceederNode` change a child's result.
+**Decorators.** `InverterNode`, `SucceederNode` and `ForceFailureNode` change a child's result.
 `RepeaterNode(child, times)` repeats its child until it has succeeded `times` times and fails
 as soon as the child fails; with no `times` it repeats forever and always returns `RUNNING`.
 `RetryNode(child, attempts)` runs its child again after each failure, up to `attempts` runs.
 `RepeatUntilNode` runs its child until it fails.
+
+**Other names.** For readers used to other behavior tree libraries, `FallbackNode` is a
+`SelectorNode`, `ForceSuccessNode` is a `SucceederNode` and `UntilFailureNode` is a
+`RepeatUntilNode`. Each is a subclass that behaves exactly like the node it names.
 
 **Time.** Time-based nodes use the unit the game passes to `execute(deltaTime)`.
 `WaitNode(duration)` stays `RUNNING` until that much time has passed, then succeeds.

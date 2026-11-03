@@ -20,6 +20,8 @@ Test files mirror source files under `test/`, organized by module:
 | `src/dropecho/ai/bt/node/decorator/RepeaterNode.hx` | `test/bt/node/decorator/RepeaterNodeTests.hx` |
 | `src/dropecho/ai/bt/node/decorator/RepeatUntilNode.hx` | `test/bt/node/decorator/RepeatUntilNodeTests.hx` |
 | `src/dropecho/ai/bt/node/decorator/SucceederNode.hx` | `test/bt/node/decorator/SucceederNodeTests.hx` |
+| `src/dropecho/ai/bt/node/decorator/ForceFailureNode.hx` | `test/bt/node/decorator/ForceFailureNodeTests.hx` |
+| `FallbackNode`, `ForceSuccessNode`, `UntilFailureNode` (aliases) | `test/bt/node/AliasNodeTests.hx` |
 | `src/dropecho/ai/bt/node/ConditionNode.hx` | `test/bt/node/ConditionNodeTests.hx` |
 | `src/dropecho/ai/bt/node/WaitNode.hx` | `test/bt/node/WaitNodeTests.hx` |
 | `src/dropecho/ai/bt/node/composite/ParallelNode.hx` | `test/bt/node/composite/ParallelNodeTests.hx` |

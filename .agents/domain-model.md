@@ -218,6 +218,11 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
     `RepeatUntilNode`.
   - **Succeeder:** SUCCESS whenever the child finishes, whatever it returned. Owner:
     `SucceederNode`.
+  - **Force failure:** FAILURE whenever the child finishes, whatever it returned. Owner:
+    `ForceFailureNode`.
+  - **Other names:** Fallback is a Selector, Force success a Succeeder, Until failure a
+    Repeat until fail; each is a subclass that adds nothing. Owners: `FallbackNode`,
+    `ForceSuccessNode`, `UntilFailureNode`.
 
 ### State machine
 

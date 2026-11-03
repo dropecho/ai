@@ -28,14 +28,18 @@ src/dropecho/ai/
 │       │   ├── IAbortsLowerPriority.hx
 │       │   ├── SelectorNode.hx    # Optional reactive flag
 │       │   ├── SequenceNode.hx    # Optional reactive flag
-│       │   └── ParallelNode.hx    # Ticks all children; success/failure thresholds
+│       │   ├── ParallelNode.hx    # Ticks all children; success/failure thresholds
+│       │   └── FallbackNode.hx    # Another name for SelectorNode
 │       └── decorator/
 │           ├── DecoratorNode.hx   # Base: wraps one child, forwards halt
 │           ├── InverterNode.hx
 │           ├── SucceederNode.hx
+│           ├── ForceSuccessNode.hx # Another name for SucceederNode
+│           ├── ForceFailureNode.hx
 │           ├── RepeaterNode.hx    # Optional success count
 │           ├── RetryNode.hx
 │           ├── RepeatUntilNode.hx
+│           ├── UntilFailureNode.hx # Another name for RepeatUntilNode
 │           ├── GuardNode.hx       # Runs its child while a Check holds
 │           ├── AbortMode.hx       # NONE, SELF, LOWER_PRIORITY, BOTH
 │           ├── TimeoutNode.hx

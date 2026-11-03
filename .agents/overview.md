@@ -30,6 +30,8 @@ Decorator nodes (single child wrapper):
 - **`RetryNode`** — re-runs a failing child up to a number of attempts
 - **`RepeatUntilNode`** — returns RUNNING until child returns FAILURE, then returns SUCCESS
 - **`SucceederNode`** — always returns SUCCESS (or RUNNING if child is RUNNING)
+- **`ForceFailureNode`** — always returns FAILURE (or RUNNING if child is RUNNING)
+- Other names: **`FallbackNode`** = `SelectorNode`, **`ForceSuccessNode`** = `SucceederNode`, **`UntilFailureNode`** = `RepeatUntilNode`
 - **`GuardNode`** — runs its child while a Check holds; `AbortMode` NONE / SELF / LOWER_PRIORITY / BOTH
 - **`TimeoutNode`**, **`CooldownNode`** — limit a child by game time
 
