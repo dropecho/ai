@@ -23,11 +23,10 @@ class Plan {
 	public function new(actions:AbstractArray<Action> = null, ?worldState:WorldStateProvider) {
 		_worldState = worldState;
 		if (actions != null) {
-			// Queue.enqueueMany reverses order on JS (dropecho.ds 2.0.0), so enqueue one at a time.
 			for (action in actions) {
 				_requireWayToFinish(action);
-				_actions.enqueue(action);
 			}
+			_actions.enqueueMany(actions);
 		}
 	}
 

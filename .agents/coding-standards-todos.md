@@ -60,8 +60,8 @@ in code. Nothing here is implemented until approved. Terms are from
 | B20 | Bug | `toDot()` quirks: current State only marked when no Transition is pending, a self-loop on every State, target-only States not declared, names unquoted (spaces/hyphens break DOT) | A correct State graph | — | done |
 | A10 | API change | Blackboard can't list its facts, so tools must know keys in advance (the old FSM demo read a field that no longer exists) | Debug views and demos | — | done |
 | B21 | Bug (question) | With equal values, the most important Motive is the later one; should it be the first? | Predictable ties | — | done |
-| B22 | Bug (upstream) | `dropecho.ds` Dijkstra keys its distance maps by `Std.string(node)` on JS (AbstractMap is a plain object), which dumps each node's fields; slow, and only distinct because the label is in the dump | Planner speed and safety | — | fixed on dropecho.ds branch `fix/js-queue-order-and-node-keys` (unreleased, 2.0.1); then bump here and remove the `Plan.new` workaround |
-| B16 | Bug (upstream) | Fix `Queue.enqueueMany` in dropecho.ds (adds to the front on JS), then remove the workaround in `Plan.new` | Removes a workaround | — | fixed on dropecho.ds branch `fix/js-queue-order-and-node-keys` (unreleased, 2.0.1); then bump here and remove the `Plan.new` workaround |
+| B22 | Bug (upstream) | `dropecho.ds` Dijkstra keys its distance maps by `Std.string(node)` on JS (AbstractMap is a plain object), which dumps each node's fields; slow, and only distinct because the label is in the dump | Planner speed and safety | — | done: fixed in dropecho.ds 2.1.0, bumped here |
+| B16 | Bug (upstream) | Fix `Queue.enqueueMany` in dropecho.ds (adds to the front on JS), then remove the workaround in `Plan.new` | Removes a workaround | — | done: fixed in dropecho.ds 2.1.0, bumped here; `Plan.new` uses `enqueueMany` again |
 | A2 | API change | GOAP and Utility aren't exported in the CJS bundle, while dropecho.ds's Graph/GraphNode/Heap/Queue/Search now are, as top-level names | JS users can reach the planner | — | done |
 | A4 | API change | Replace the public `Plan._actions` with `currentAction` and `iterator()`; tests stop reaching into it (finishes R4) | Plan owns its queue | — | done |
 | D1 | Docs | `architecture.md` is stale (Int blackboard, stub LeafNode, backward-chaining planner) and repeats the concepts; point it at the domain model and keep only the flows | One description of the system | — | done |
@@ -235,8 +235,8 @@ with a `TaskBank.register(...)` example (P3).
 ### B16 — upstream Queue bug
 
 **File:** `dropecho.ds/src/dropecho/ds/Queue.hx` (other repo), JS branch of
-`enqueueMany` uses `List.push`. Fix there with a test, release, bump here, and remove the
-loop in `Plan.new`.
+`enqueueMany` uses `List.push`. Done: fixed in dropecho.ds 2.1.0; this library is bumped and
+`Plan.new` calls `enqueueMany` again.
 
 ### B17 — default done check is always true (question)
 
