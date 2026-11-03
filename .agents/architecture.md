@@ -17,7 +17,7 @@ src/dropecho/ai/
 │       ├── Node.hx            # Node interface + IExecutable<T>
 │       ├── NODE_STATUS.hx     # Status enum abstract: SUCCESS, FAILURE, RUNNING
 │       ├── LeafNode.hx        # Abstract base for game-defined leaves (implement execute, may override halt)
-│       ├── TaskNode.hx        # Leaf that runs a registered Task
+│       ├── TaskNode.hx        # Leaf that runs a Task, given directly or by registered name
 │       ├── ConditionNode.hx   # Leaf: SUCCESS when its Check is true, else FAILURE
 │       ├── Check.hx           # Check typedef: Blackboard -> Bool
 │       ├── WaitNode.hx        # Leaf: RUNNING until a duration has passed
@@ -70,11 +70,11 @@ game: tree.execute()                     # once per tick
   → root.execute()
     → composite: runChildren(deciding)   # from the current child on, same tick, until decided or RUNNING (domain-model.md, "Composite position")
     → decorator: child.execute(), then changes the Status
-      → TaskNode.execute() → its registered Task(context) → Status
+      → TaskNode.execute() → its Task(context) → Status
 ```
 
-Tasks are looked up in the `TaskBank` by name, so register them before building the
-`TaskNode`s that use them.
+A `TaskNode` built from a name looks its Task up in the `TaskBank`, so register it before
+building the node; one given the function directly skips the registry.
 
 ## FSM Execution Flow
 

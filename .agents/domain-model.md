@@ -89,7 +89,7 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
 | A change listener is called only when what is read back changes, never for a write of an equal value | `Blackboard.set`, `setValue`, `removeValue` |
 | A listener removed during a notification is not called again; one added waits for the next change | `Blackboard.notifyChange` iterates a copy |
 | A behavior tree has a root | `BehaviorTree.new` requires `root` and throws on null |
-| A Task node only refers to a registered Task: an unknown name throws when the node is built | `TaskBank.get` |
+| A Task node built from a name only refers to a registered Task: an unknown name throws when the node is built | `TaskNode.new` through `TaskBank.get` |
 | Every Composite, Decorator and Leaf node defines `execute` | Compiler: `CompositeNode`, `DecoratorNode` and `LeafNode` are abstract classes |
 | A state machine ticks only once it has a State | `FSM.tick` throws |
 | `tick` never takes a Transition to the current State | `FSM.getTransition` skips them |
@@ -166,7 +166,8 @@ Actions pending --update(dt): drop done Actions, then the first not done .update
   must be stopped. Owner: `dropecho.ai.Task` (typedef in `TaskBank.hx`).
 - **Task registry:** where game code registers Tasks by name, so trees can refer to them
   by name. Owner: `dropecho.ai.TaskBank` (`register`, `get`).
-- **Task node:** a leaf that runs a registered Task. Owner: `bt.node.TaskNode`.
+- **Task node:** a leaf that runs a Task, either given directly or looked up by name in the
+  Task registry; the name labels it in tree dumps. Owner: `bt.node.TaskNode`.
 - **Leaf node:** the base for game-defined leaves that are classes instead of Tasks.
   Owner: `bt.node.LeafNode`, an abstract class; subclasses implement `execute` and may
   override `halt`.

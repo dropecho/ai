@@ -72,7 +72,12 @@ tree.init(new Blackboard());
 var status = tree.execute(dt); // call every tick with the time since the last one
 ```
 
-Register a Task before creating a `TaskNode` that names it.
+Register a Task before creating a `TaskNode` that names it. Or skip the registry and pass the
+function itself; the name then only labels the node in tree dumps:
+
+```haxe
+new TaskNode("eat", (bb, dt) -> NODE_STATUS.SUCCESS);
+```
 
 **Composites.** `SelectorNode` and `SequenceNode` run on to the next child in the same tick
 until the result is decided or a child returns `RUNNING`; a `RUNNING` child is resumed next

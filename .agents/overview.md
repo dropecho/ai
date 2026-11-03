@@ -13,7 +13,7 @@ Node-based hierarchical behavior execution. Each node returns a `NODE_STATUS` (`
 - **`BehaviorTree`** — root wrapper around a single child `Node`; holds a `Blackboard` context
 - **`Node` / `IExecutable<T>`** — core interfaces: `init(context)`, `execute(deltaTime)`, and `halt()` for a RUNNING node its parent abandons
 - **`NODE_STATUS`** — enum abstract over `Int`: `SUCCESS=0`, `FAILURE=1`, `RUNNING=2`
-- **`TaskNode`** — leaf node that looks up and calls a named task from `TaskBank`
+- **`TaskNode`** — leaf node that calls a task, either passed in directly or looked up by name in `TaskBank`
 - **`TaskBank`** — static registry mapping task names to `(Blackboard, deltaTime) → NODE_STATUS` functions
 - **`Blackboard`** — shared key→Float fact store passed through the tree
 - **`ConditionNode`**, **`WaitNode`** — leaves: a yes/no Check; wait for a duration

@@ -4,28 +4,31 @@ import dropecho.ai.TaskBank;
 import dropecho.ai.Blackboard;
 
 /**
- * A leaf node that runs a Task from the Task registry (`TaskBank`) each tick; tree dumps label it with the Task name.
+ * A leaf node that runs a Task each tick: one given directly, or one looked up by name in the Task registry (`TaskBank`).
+ * Tree dumps label it with the Task name.
  */
 @:expose("bt.TaskNode")
 class TaskNode implements Node implements ILabeled {
-	private var taskName:String;
+	private var taskName:Null<String>;
 	private var action:Task;
 	private var context:Blackboard;
 
 	/**
-	 * Creates a node for a registered Task, looked up now rather than at tick time.
+	 * Creates a node for a Task. Without `task`, the Task registered under `taskName` is looked up now rather than at tick time.
 	 *
-	 * @param taskName - The name the Task was registered under; throws if no Task has that name.
+	 * @param taskName - With `task`, only the label shown in tree dumps (may be null); without it, the name the Task was
+	 *   registered under, and the constructor throws if no Task has that name.
+	 * @param task - The Task to run, used instead of the registry.
 	 */
-	public function new(taskName:String) {
+	public function new(taskName:Null<String>, ?task:Task) {
 		this.taskName = taskName;
-		action = TaskBank.get(taskName);
+		action = task != null ? task : TaskBank.get(taskName);
 	}
 
 	/**
 	 * Gives the Task name, which labels this node in tree dumps.
 	 *
-	 * @return The name the Task was registered under.
+	 * @return The Task name, or null for a Task given directly without one.
 	 */
 	public function getLabel():Null<String> {
 		return taskName;
