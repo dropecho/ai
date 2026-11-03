@@ -50,8 +50,8 @@
       {
         "assets": [
           {
-            "path": "dist/cs/dropecho.langgen/bin/dropecho.langgen.dll",
-            "name": "dropecho.langgen-${nextRelease.gitTag}.dll",
+            "path": "dist/cs/bin/dropecho.ai.dll",
+            "name": "dropecho.ai-${nextRelease.gitTag}.dll",
             "label": "C# DLL"
           }
         ]
