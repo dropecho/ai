@@ -15,11 +15,15 @@
   },
   "license": "MIT",
   "scripts": {
+    "prepare": "lix download",
     "build": "npm run clean && haxe build.hxml",
-    "test": "haxelib run dropecho.testing",
-    "clean": "rm -rf dist && rm -rf artifacts"
+    "test": "lix dropecho.testing",
+    "clean": "rm -rf dist artifacts",
+    "build:docs": "haxelib run dox -i artifacts/docs.xml -o docs/api --toplevel-package dropecho.ai -D source-path https://github.com/dropecho/ai/blob/main/src -D website https://github.com/dropecho/ai --title 'dropecho.ai API'",
+    "build:example": "cp dist/js/cjs/index.cjs docs/dropecho.ai.js"
   },
   "devDependencies": {
+    "lix": "^16.0.2",
     "@semantic-release/changelog": "^6.0.2",
     "@semantic-release/commit-analyzer": "^9.0.2",
     "@semantic-release/exec": "^6.0.3",
