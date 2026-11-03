@@ -485,9 +485,9 @@ class dropecho_ai_bt_node_NODE_$STATUS_$IMPL {
 $hx_exports["bt"]["NODE_STATUS"] = dropecho_ai_bt_node_NODE_$STATUS_$IMPL;
 dropecho_ai_bt_node_NODE_$STATUS_$IMPL.__name__ = "dropecho.ai.bt.node.NODE_STATUS_IMPL";
 class dropecho_ai_bt_node_TaskNode {
-	constructor(taskName) {
+	constructor(taskName,task) {
 		this.taskName = taskName;
-		this.action = dropecho_ai_TaskBank.get(taskName);
+		this.action = task != null ? task : dropecho_ai_TaskBank.get(taskName);
 	}
 	getLabel() {
 		return this.taskName;
@@ -675,6 +675,37 @@ dropecho_ai_bt_node_composite_CompositeNode.__interfaces__ = [dropecho_ai_bt_nod
 Object.assign(dropecho_ai_bt_node_composite_CompositeNode.prototype, {
 	__class__: dropecho_ai_bt_node_composite_CompositeNode
 });
+class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_composite_CompositeNode {
+	constructor(children,reactive) {
+		if(reactive == null) {
+			reactive = false;
+		}
+		super(children,reactive);
+	}
+	execute(deltaTime) {
+		return this.runChildren(0,deltaTime);
+	}
+}
+$hx_exports["bt"]["SelectorNode"] = dropecho_ai_bt_node_composite_SelectorNode;
+dropecho_ai_bt_node_composite_SelectorNode.__name__ = "dropecho.ai.bt.node.composite.SelectorNode";
+dropecho_ai_bt_node_composite_SelectorNode.__super__ = dropecho_ai_bt_node_composite_CompositeNode;
+Object.assign(dropecho_ai_bt_node_composite_SelectorNode.prototype, {
+	__class__: dropecho_ai_bt_node_composite_SelectorNode
+});
+class dropecho_ai_bt_node_composite_FallbackNode extends dropecho_ai_bt_node_composite_SelectorNode {
+	constructor(children,reactive) {
+		if(reactive == null) {
+			reactive = false;
+		}
+		super(children,reactive);
+	}
+}
+$hx_exports["bt"]["FallbackNode"] = dropecho_ai_bt_node_composite_FallbackNode;
+dropecho_ai_bt_node_composite_FallbackNode.__name__ = "dropecho.ai.bt.node.composite.FallbackNode";
+dropecho_ai_bt_node_composite_FallbackNode.__super__ = dropecho_ai_bt_node_composite_SelectorNode;
+Object.assign(dropecho_ai_bt_node_composite_FallbackNode.prototype, {
+	__class__: dropecho_ai_bt_node_composite_FallbackNode
+});
 class dropecho_ai_bt_node_composite_IAbortsLowerPriority {
 }
 dropecho_ai_bt_node_composite_IAbortsLowerPriority.__name__ = "dropecho.ai.bt.node.composite.IAbortsLowerPriority";
@@ -790,23 +821,6 @@ dropecho_ai_bt_node_composite_ParallelNode.__interfaces__ = [dropecho_ai_bt_node
 Object.assign(dropecho_ai_bt_node_composite_ParallelNode.prototype, {
 	__class__: dropecho_ai_bt_node_composite_ParallelNode
 });
-class dropecho_ai_bt_node_composite_SelectorNode extends dropecho_ai_bt_node_composite_CompositeNode {
-	constructor(children,reactive) {
-		if(reactive == null) {
-			reactive = false;
-		}
-		super(children,reactive);
-	}
-	execute(deltaTime) {
-		return this.runChildren(0,deltaTime);
-	}
-}
-$hx_exports["bt"]["SelectorNode"] = dropecho_ai_bt_node_composite_SelectorNode;
-dropecho_ai_bt_node_composite_SelectorNode.__name__ = "dropecho.ai.bt.node.composite.SelectorNode";
-dropecho_ai_bt_node_composite_SelectorNode.__super__ = dropecho_ai_bt_node_composite_CompositeNode;
-Object.assign(dropecho_ai_bt_node_composite_SelectorNode.prototype, {
-	__class__: dropecho_ai_bt_node_composite_SelectorNode
-});
 class dropecho_ai_bt_node_composite_SequenceNode extends dropecho_ai_bt_node_composite_CompositeNode {
 	constructor(children,reactive) {
 		if(reactive == null) {
@@ -912,6 +926,51 @@ dropecho_ai_bt_node_decorator_CooldownNode.__name__ = "dropecho.ai.bt.node.decor
 dropecho_ai_bt_node_decorator_CooldownNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_CooldownNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_CooldownNode
+});
+class dropecho_ai_bt_node_decorator_ForceFailureNode extends dropecho_ai_bt_node_decorator_DecoratorNode {
+	constructor(child) {
+		super(child);
+	}
+	execute(deltaTime) {
+		if(this.executeChild(deltaTime) == 2) {
+			return 2;
+		}
+		return 1;
+	}
+}
+$hx_exports["bt"]["ForceFailureNode"] = dropecho_ai_bt_node_decorator_ForceFailureNode;
+dropecho_ai_bt_node_decorator_ForceFailureNode.__name__ = "dropecho.ai.bt.node.decorator.ForceFailureNode";
+dropecho_ai_bt_node_decorator_ForceFailureNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
+Object.assign(dropecho_ai_bt_node_decorator_ForceFailureNode.prototype, {
+	__class__: dropecho_ai_bt_node_decorator_ForceFailureNode
+});
+class dropecho_ai_bt_node_decorator_SucceederNode extends dropecho_ai_bt_node_decorator_DecoratorNode {
+	constructor(child) {
+		super(child);
+	}
+	execute(deltaTime) {
+		if(this.executeChild(deltaTime) == 2) {
+			return 2;
+		}
+		return 0;
+	}
+}
+$hx_exports["bt"]["SucceederNode"] = dropecho_ai_bt_node_decorator_SucceederNode;
+dropecho_ai_bt_node_decorator_SucceederNode.__name__ = "dropecho.ai.bt.node.decorator.SucceederNode";
+dropecho_ai_bt_node_decorator_SucceederNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
+Object.assign(dropecho_ai_bt_node_decorator_SucceederNode.prototype, {
+	__class__: dropecho_ai_bt_node_decorator_SucceederNode
+});
+class dropecho_ai_bt_node_decorator_ForceSuccessNode extends dropecho_ai_bt_node_decorator_SucceederNode {
+	constructor(child) {
+		super(child);
+	}
+}
+$hx_exports["bt"]["ForceSuccessNode"] = dropecho_ai_bt_node_decorator_ForceSuccessNode;
+dropecho_ai_bt_node_decorator_ForceSuccessNode.__name__ = "dropecho.ai.bt.node.decorator.ForceSuccessNode";
+dropecho_ai_bt_node_decorator_ForceSuccessNode.__super__ = dropecho_ai_bt_node_decorator_SucceederNode;
+Object.assign(dropecho_ai_bt_node_decorator_ForceSuccessNode.prototype, {
+	__class__: dropecho_ai_bt_node_decorator_ForceSuccessNode
 });
 class dropecho_ai_bt_node_decorator_GuardNode extends dropecho_ai_bt_node_decorator_DecoratorNode {
 	constructor(check,child,abort) {
@@ -1107,23 +1166,6 @@ dropecho_ai_bt_node_decorator_RetryNode.__super__ = dropecho_ai_bt_node_decorato
 Object.assign(dropecho_ai_bt_node_decorator_RetryNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_RetryNode
 });
-class dropecho_ai_bt_node_decorator_SucceederNode extends dropecho_ai_bt_node_decorator_DecoratorNode {
-	constructor(child) {
-		super(child);
-	}
-	execute(deltaTime) {
-		if(this.executeChild(deltaTime) == 2) {
-			return 2;
-		}
-		return 0;
-	}
-}
-$hx_exports["bt"]["SucceederNode"] = dropecho_ai_bt_node_decorator_SucceederNode;
-dropecho_ai_bt_node_decorator_SucceederNode.__name__ = "dropecho.ai.bt.node.decorator.SucceederNode";
-dropecho_ai_bt_node_decorator_SucceederNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
-Object.assign(dropecho_ai_bt_node_decorator_SucceederNode.prototype, {
-	__class__: dropecho_ai_bt_node_decorator_SucceederNode
-});
 class dropecho_ai_bt_node_decorator_TimeoutNode extends dropecho_ai_bt_node_decorator_DecoratorNode {
 	constructor(child,limit) {
 		dropecho_ai_bt_node_decorator_DecoratorNode._hx_skip_constructor = true;
@@ -1168,6 +1210,17 @@ dropecho_ai_bt_node_decorator_TimeoutNode.__name__ = "dropecho.ai.bt.node.decora
 dropecho_ai_bt_node_decorator_TimeoutNode.__super__ = dropecho_ai_bt_node_decorator_DecoratorNode;
 Object.assign(dropecho_ai_bt_node_decorator_TimeoutNode.prototype, {
 	__class__: dropecho_ai_bt_node_decorator_TimeoutNode
+});
+class dropecho_ai_bt_node_decorator_UntilFailureNode extends dropecho_ai_bt_node_decorator_RepeatUntilNode {
+	constructor(child) {
+		super(child);
+	}
+}
+$hx_exports["bt"]["UntilFailureNode"] = dropecho_ai_bt_node_decorator_UntilFailureNode;
+dropecho_ai_bt_node_decorator_UntilFailureNode.__name__ = "dropecho.ai.bt.node.decorator.UntilFailureNode";
+dropecho_ai_bt_node_decorator_UntilFailureNode.__super__ = dropecho_ai_bt_node_decorator_RepeatUntilNode;
+Object.assign(dropecho_ai_bt_node_decorator_UntilFailureNode.prototype, {
+	__class__: dropecho_ai_bt_node_decorator_UntilFailureNode
 });
 class dropecho_ai_bt_trace_ITreeTracer {
 }
@@ -1507,11 +1560,12 @@ class dropecho_ai_goap_Plan {
 		if(actions != null) {
 			let _g = 0;
 			let _g1 = actions;
-			while(_g < _g1.length) {
-				let action = _g1[_g];
-				++_g;
-				this._requireWayToFinish(action);
-				this._actions._data.add(action);
+			while(_g < _g1.length) this._requireWayToFinish(_g1[_g++]);
+			let _this = this._actions;
+			let item = $getIterator(actions);
+			while(item.hasNext()) {
+				let item1 = item.next();
+				_this._data.add(item1);
 			}
 		}
 	}
@@ -1940,6 +1994,9 @@ class dropecho_ds_GraphNode {
 	neighbors() {
 		return this.graph.neighbors(this);
 	}
+	toString() {
+		return this.label;
+	}
 }
 $hx_exports["GraphNode"] = dropecho_ds_GraphNode;
 dropecho_ds_GraphNode.__name__ = "dropecho.ds.GraphNode";
@@ -2060,7 +2117,7 @@ class dropecho_ds_Queue {
 		let item = $getIterator(iter);
 		while(item.hasNext()) {
 			let item1 = item.next();
-			this._data.push(item1);
+			this._data.add(item1);
 		}
 	}
 	dequeue() {
@@ -2455,14 +2512,6 @@ class haxe_ds_List {
 			this.q.next = x;
 		}
 		this.q = x;
-		this.length++;
-	}
-	push(item) {
-		let x = new haxe_ds__$List_ListNode(item,this.h);
-		this.h = x;
-		if(this.q == null) {
-			this.q = x;
-		}
 		this.length++;
 	}
 	first() {
